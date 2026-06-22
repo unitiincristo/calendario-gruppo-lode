@@ -14,20 +14,18 @@
 <body class="bg-[#111111] text-[#ffffff] min-h-screen font-sans antialiased tracking-wide overflow-x-hidden">
 
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/70 z-40 hidden transition-opacity" onclick="toggleSidebar()"></div>
-
     <aside id="sidebar" class="fixed top-0 left-0 w-4/5 max-w-sm h-full bg-[#1a1a1a] border-r border-white/[0.05] z-50 transform -translate-x-full transition-transform duration-300 ease-in-out shadow-[4px_0_15px_rgba(0,0,0,0.8)] flex flex-col">
         <div class="p-5 border-b border-white/[0.05] flex justify-between items-center">
             <h2 class="text-lg font-bold text-[#aaaaaa]">Archivio Eventi</h2>
             <button onclick="toggleSidebar()" class="text-[#888888] text-2xl font-bold p-2">&times;</button>
         </div>
-        <div id="past-events-container" class="p-4 overflow-y-auto flex-1 space-y-4">
-            </div>
+        <div id="past-events-container" class="p-4 overflow-y-auto flex-1 space-y-4"></div>
     </aside>
 
     <header class="bg-[#111111] border-b border-white/[0.05] sticky top-0 z-30 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
         <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="text-[#ffffff] p-1 focus:outline-none">
+                <button onclick="toggleSidebar()" class="text-[#ffffff] p-1 focus:outline-none cursor-pointer">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
                 <h1 class="text-xl font-bold tracking-wide text-[#ffffff] m-0">Sabaoth Lode</h1>
@@ -55,18 +53,13 @@
     </main>
 
     <script>
-        // 1. IL TUO LINK CSV
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJvRESTof_RVpmAyb5vkGX7mAweXbXESyE3BaaX81f4YS3PCo_4c395DvcP7q-iBwr59diu4DLzzCt/pub?gid=1040693821&single=true&output=csv';
 
-        // 2. GESTIONE SIDEBAR
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebar-overlay').classList.toggle('hidden');
         }
 
-        // 3. SERVICE WORKER E INSTALLAZIONE
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 
         let deferredPrompt;
@@ -93,7 +86,6 @@
             });
         }
 
-        // 4. FORMATTAZIONI
         function formatDate(dateString) {
             if (!dateString || !dateString.includes('-')) return dateString;
             const parts = dateString.split('-');
@@ -101,23 +93,44 @@
             return `${parts[2]} ${months[parseInt(parts[1], 10) - 1]}`;
         }
 
-        // Genera il link per Google Calendar
-        function getCalendarLink(dateStr, timeStr, title) {
-            if(!dateStr || !dateStr.includes('-')) return '#';
-            const dateStrClean = dateStr.replace(/-/g, '');
-            let timeStrClean = "090000"; // Default
+        // GENERATORE ICS (Risolve i bug del fuso orario e di Google Calendar)
+        window.downloadICS = function(titleEnc, dateStr, timeStr) {
+            const title = decodeURIComponent(titleEnc);
+            if(!dateStr || !dateStr.includes('-')) return;
+            const dStr = dateStr.replace(/-/g, '');
+            let tStart = "090000";
+            let tEnd = "110000"; // Calcola in automatico 2 ore di durata per la lode
+            
             if(timeStr && timeStr.includes(':')) {
                 const parts = timeStr.split(':');
-                timeStrClean = parts[0] + parts[1] + "00";
+                tStart = parts[0] + parts[1] + "00";
+                let endHour = (parseInt(parts[0], 10) + 2).toString().padStart(2, '0');
+                tEnd = endHour + parts[1] + "00";
             }
-            return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${dateStrClean}T${timeStrClean}Z/${dateStrClean}T${timeStrClean}Z&details=Calendario+Lode`;
-        }
+            
+            const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Sabaoth Lode App//IT
+BEGIN:VEVENT
+SUMMARY:${title}
+DTSTART;TZID=Europe/Rome:${dStr}T${tStart}
+DTEND;TZID=Europe/Rome:${dStr}T${tEnd}
+DESCRIPTION:Promemoria salvato da Sabaoth Lode App
+END:VEVENT
+END:VCALENDAR`;
 
-        // 5. RECUPERO DATI (Con Cache per Offline)
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'evento_lode.ics');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
         async function fetchCalendarData() {
             const badge = document.getElementById('status-badge');
-            
-            // Prova a caricare subito i dati salvati (Offline mode veloce)
             const cachedData = localStorage.getItem('lodeAppData');
             if(cachedData) processEvents(JSON.parse(cachedData));
 
@@ -127,7 +140,7 @@
                 Papa.parse(csvText, {
                     header: true, skipEmptyLines: true,
                     complete: function(results) { 
-                        localStorage.setItem('lodeAppData', JSON.stringify(results.data)); // Salva per l'offline
+                        localStorage.setItem('lodeAppData', JSON.stringify(results.data));
                         processEvents(results.data); 
                         badge.innerText = "Aggiornato";
                         badge.className = "bg-white/[0.03] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-light border border-white/[0.05]";
@@ -138,37 +151,28 @@
             }
         }
 
-        // 6. SUDDIVISIONE: PROSSIMI EVENTI VS STORICO
         function processEvents(events) {
             const upcomingContainer = document.getElementById('upcoming-events-container');
             const pastContainer = document.getElementById('past-events-container');
-            
             const today = new Date();
-            today.setHours(0,0,0,0); // Azzera l'ora per confrontare solo la data
-
+            today.setHours(0,0,0,0);
             let upcoming = [];
             let past = [];
 
             events.forEach(event => {
                 if (!event.Data || !event['Tipo Evento']) return;
                 const evDate = new Date(event.Data);
-                
                 if (evDate >= today) upcoming.push(event);
                 else past.push(event);
             });
 
-            // Ordina futuri dal più vicino, passati dal più recente
             upcoming.sort((a, b) => new Date(a.Data) - new Date(b.Data));
             past.sort((a, b) => new Date(b.Data) - new Date(a.Data));
 
-            // Prendi solo i primi 4 appuntamenti futuri
-            const nextEvents = upcoming.slice(0, 4);
-
-            renderCards(nextEvents, upcomingContainer, "Nessun evento in programma.");
+            renderCards(upcoming.slice(0, 4), upcomingContainer, "Nessun evento in programma.");
             renderCards(past, pastContainer, "Nessun evento passato.", true);
         }
 
-        // 7. DISEGNO DELLE SCHEDE (HTML)
         function renderCards(events, container, emptyMessage, isPast = false) {
             let htmlContent = '';
             events.forEach(event => {
@@ -178,18 +182,34 @@
                 if (event['Scaletta Canzoni']) {
                     const separator = event['Scaletta Canzoni'].includes('|') ? '|' : ',';
                     const songs = event['Scaletta Canzoni'].split(separator).filter(s => s.trim() !== '');
-                    songsBlock = `<div><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-2">Scaletta</p><ul class="space-y-2 text-sm">${songs.map((s, i) => `<li class="bg-white/[0.03] px-3 py-2.5 rounded-xl border border-white/[0.05] flex gap-2"><span class="text-[#aaaaaa] font-bold">${i + 1}.</span> <span class="text-[#ffffff]">${s.trim()}</span></li>`).join('')}</ul></div>`;
+                    
+                    // Aggiunto pulsante YouTube di fianco a ogni canzone
+                    songsBlock = `<div><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-2">Scaletta</p><ul class="space-y-2 text-sm">${songs.map((s, i) => {
+                        const songClean = s.trim();
+                        const ytLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(songClean)}`;
+                        return `
+                        <li class="bg-white/[0.03] px-3 py-2.5 rounded-xl border border-white/[0.05] flex justify-between items-center gap-2">
+                            <div class="flex gap-2 items-center">
+                                <span class="text-[#aaaaaa] font-bold">${i + 1}.</span> 
+                                <span class="text-[#ffffff]">${songClean}</span>
+                            </div>
+                            <a href="${ytLink}" target="_blank" class="text-[#ff4444] bg-[#ff4444]/10 p-2 rounded-lg border border-[#ff4444]/20 hover:bg-[#ff4444]/20 transition-colors flex items-center justify-center shrink-0">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.377.55a3.016 3.016 0 0 0-2.122 2.136C.005 8.08.005 12 .005 12s0 3.92.496 5.814a3.016 3.016 0 0 0 2.122 2.136c1.872.55 9.377.55 9.377.55s7.505 0 9.377-.55a3.016 3.016 0 0 0 2.122-2.136C24 15.92 24 12 24 12s0-3.92-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                            </a>
+                        </li>`;
+                    }).join('')}</ul></div>`;
                 }
 
                 let notesBlock = event['Note e Prove'] ? `<div class="bg-white/[0.03] border border-white/[0.05] rounded-xl p-3 text-[13px] text-[#aaaaaa] mt-3 font-light tracking-wide">📌 ${event['Note e Prove']}</div>` : '';
 
-                // Bottone Aggiungi al Calendario (Solo per i futuri)
+                // Logica del Titolo Dinamico dal foglio
+                let calendarTitle = event['Titolo Calendario'] || event['Tipo Evento'] || 'Evento Lode';
+                
                 let calendarBtn = !isPast ? `
-                    <a href="${getCalendarLink(event.Data, event.Orario, event['Tipo Evento'])}" target="_blank" class="mt-4 flex items-center justify-center gap-2 w-full bg-white/[0.05] hover:bg-white/[0.1] text-[#aaaaaa] text-xs py-2.5 rounded-lg border border-white/[0.05] transition-colors decoration-none">
+                    <button onclick="downloadICS('${encodeURIComponent(calendarTitle)}', '${event.Data}', '${event.Orario}')" class="mt-4 flex items-center justify-center gap-2 w-full bg-white/[0.05] hover:bg-white/[0.1] text-[#aaaaaa] text-xs py-2.5 rounded-lg border border-white/[0.05] transition-colors cursor-pointer">
                         📅 Salva nel Calendario
-                    </a>` : '';
+                    </button>` : '';
 
-                // Le schede passate sono leggermente più sbiadite (opacità)
                 const opacityClass = isPast ? 'opacity-70 grayscale-[30%]' : '';
 
                 htmlContent += `<div class="bg-white/[0.03] rounded-2xl p-5 shadow-[0_4px_10px_rgba(0,0,0,0.5)] border border-white/[0.05] space-y-4 ${opacityClass}">
