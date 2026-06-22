@@ -3,90 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Calendario Gruppo Lode</title>
+    <title>Sabaoth Lode</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1f2937">
+    <meta name="theme-color" content="#111111">
     <link rel="apple-touch-icon" href="./icon.png">
     
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen font-sans antialiased">
+<body class="bg-[#111111] text-[#ffffff] min-h-screen font-sans antialiased tracking-wide">
 
-    <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-10 shadow-md">
+    <header class="bg-[#111111] border-b border-white/[0.05] sticky top-0 z-10 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
         <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold tracking-wide text-indigo-400">🎵 Calendario Gruppo Lode</h1>
-            <span id="status-badge" class="bg-amber-500/20 text-amber-400 text-xs px-2.5 py-1 rounded-full font-medium">Caricamento...</span>
+            <h1 class="text-xl font-bold tracking-wide text-[#ffffff] m-0">Sabaoth Lode</h1>
+            <span id="status-badge" class="bg-[#333333] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-medium border border-[#555555]">Caricamento...</span>
         </div>
     </header>
 
     <main class="max-w-md mx-auto p-4 pb-12">
         
-        <div id="install-container" class="hidden mb-6 bg-indigo-600 rounded-xl p-4 shadow-lg border border-indigo-500 text-center">
-            <h3 class="font-bold text-white mb-2">Installa l'App sul telefono</h3>
-            <p class="text-indigo-200 text-sm mb-3">Accedi più velocemente al calendario direttamente dalla Home del tuo telefono.</p>
-            <button id="install-btn" class="bg-white text-indigo-700 font-bold py-2 px-6 rounded-full shadow-md w-full active:bg-gray-200">
+        <div id="install-container" class="hidden mb-6 bg-white/[0.03] rounded-xl p-5 shadow-[0_4px_10px_rgba(0,0,0,0.5)] border border-white/[0.05] text-center">
+            <h3 class="font-bold text-[#ffffff] mb-2 text-lg">Installa l'App</h3>
+            <p class="text-[#aaaaaa] text-sm mb-4 font-light">Accedi più velocemente al calendario direttamente dalla Home del tuo telefono.</p>
+            <button id="install-btn" class="bg-[#333333] text-[#ffffff] font-bold py-3 px-6 rounded-xl w-full border-none cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 flex items-center justify-center gap-2">
                 📲 Installa Ora
             </button>
-            <p id="ios-instruction" class="hidden text-sm text-white font-medium">
+            <p id="ios-instruction" class="hidden text-[11px] text-[#888888] mt-3">
                 🍎 Hai un iPhone? Tocca l'icona <strong>Condividi</strong> in basso e seleziona <strong>"Aggiungi a schermata Home"</strong>.
             </p>
         </div>
 
-        <div id="events-container" class="space-y-4"></div>
+        <div id="events-container" class="space-y-5"></div>
     </main>
 
     <script>
-        // 1. INCOLLA IL TUO LINK CSV QUI
+        // IL TUO LINK CSV (Rimane invariato)
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJvRESTof_RVpmAyb5vkGX7mAweXbXESyE3BaaX81f4YS3PCo_4c395DvcP7q-iBwr59diu4DLzzCt/pub?gid=1040693821&single=true&output=csv';
 
-        // REGISTRAZIONE SERVICE WORKER (Necessario per l'installazione)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js').then(() => { console.log("Service Worker Registrato"); });
         }
 
-        // LOGICA DEL BOTTONE DI INSTALLAZIONE
         let deferredPrompt;
         const installContainer = document.getElementById('install-container');
         const installBtn = document.getElementById('install-btn');
         const iosInstruction = document.getElementById('ios-instruction');
 
-        // Controlla se è iOS
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
         if (isIOS) {
-            // Su iOS non possiamo forzare l'installazione con un bottone, mostriamo le istruzioni
             installContainer.classList.remove('hidden');
             installBtn.classList.add('hidden');
             iosInstruction.classList.remove('hidden');
         } else {
-            // Logica per Android / Chrome
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
-                installContainer.classList.remove('hidden'); // Mostra il bottone se il telefono permette l'installazione
+                installContainer.classList.remove('hidden');
             });
 
             installBtn.addEventListener('click', async () => {
                 if (deferredPrompt) {
                     deferredPrompt.prompt();
                     const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') {
-                        installContainer.classList.add('hidden');
-                    }
+                    if (outcome === 'accepted') installContainer.classList.add('hidden');
                     deferredPrompt = null;
                 }
             });
-        }
-
-        // LOGICA FOGLIO GOOGLE (Come prima)
-        function getBadgeStyle(type) {
-            if(!type) return 'bg-gray-500/10 text-gray-400';
-            const t = type.toLowerCase();
-            if (t.includes('giovani')) return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
-            if (t.includes('donne')) return 'bg-pink-500/10 text-pink-400 border-pink-500/30';
-            if (t.includes('lode') || t.includes('culto')) return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30';
-            return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
         }
 
         function formatDate(dateString) {
@@ -103,10 +86,15 @@
                 const csvText = await response.text();
                 Papa.parse(csvText, {
                     header: true, skipEmptyLines: true,
-                    complete: function(results) { renderEvents(results.data); document.getElementById('status-badge').innerText = "Aggiornato"; }
+                    complete: function(results) { 
+                        renderEvents(results.data); 
+                        const badge = document.getElementById('status-badge');
+                        badge.innerText = "Aggiornato";
+                        badge.className = "bg-white/[0.03] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-light border border-white/[0.05]";
+                    }
                 });
             } catch (error) {
-                document.getElementById('status-badge').innerText = "Errore di connessione";
+                document.getElementById('status-badge').innerText = "Errore";
             }
         }
 
@@ -116,26 +104,29 @@
             events.forEach(event => {
                 if (!event.Data || !event['Tipo Evento']) return;
 
-                let formationBlock = event.Formazione ? `<div class="border-t border-b border-gray-700/50 py-2.5"><p class="text-[11px] text-gray-400 uppercase font-semibold">Formazione</p><p class="text-sm text-indigo-200">${event.Formazione}</p></div>` : '';
+                let formationBlock = event.Formazione ? `<div class="border-t border-b border-[#333333] py-3"><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-1">Formazione</p><p class="text-sm text-[#aaaaaa] font-light">${event.Formazione}</p></div>` : '';
                 
                 let songsBlock = '';
                 if (event['Scaletta Canzoni']) {
                     const separator = event['Scaletta Canzoni'].includes('|') ? '|' : ',';
                     const songs = event['Scaletta Canzoni'].split(separator).filter(s => s.trim() !== '');
-                    songsBlock = `<div><p class="text-[11px] text-gray-400 uppercase font-semibold mb-2">Scaletta</p><ul class="space-y-1.5 text-sm">${songs.map((s, i) => `<li class="bg-gray-700/30 px-3 py-1.5 rounded-xl"><span class="text-indigo-400 font-bold">${i + 1}.</span> ${s.trim()}</li>`).join('')}</ul></div>`;
+                    songsBlock = `<div><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-2">Scaletta</p><ul class="space-y-2 text-sm">${songs.map((s, i) => `<li class="bg-white/[0.03] px-3 py-2.5 rounded-xl border border-white/[0.05] flex gap-2"><span class="text-[#aaaaaa] font-bold">${i + 1}.</span> <span class="text-[#ffffff]">${s.trim()}</span></li>`).join('')}</ul></div>`;
                 }
 
-                let notesBlock = event['Note e Prove'] ? `<div class="bg-amber-500/10 rounded-xl p-3 text-xs text-amber-400 mt-2">📌 ${event['Note e Prove']}</div>` : '';
+                let notesBlock = event['Note e Prove'] ? `<div class="bg-white/[0.03] border border-white/[0.05] rounded-xl p-3 text-[13px] text-[#aaaaaa] mt-3 font-light tracking-wide">📌 ${event['Note e Prove']}</div>` : '';
 
-                htmlContent += `<div class="bg-gray-800 rounded-2xl p-5 shadow-lg border border-gray-700/40 space-y-4">
+                htmlContent += `<div class="bg-white/[0.03] rounded-2xl p-5 shadow-[0_4px_10px_rgba(0,0,0,0.5)] border border-white/[0.05] space-y-4">
                     <div class="flex justify-between items-start gap-4">
-                        <div><span class="border text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${getBadgeStyle(event['Tipo Evento'])}">${event['Tipo Evento']}</span><h2 class="text-xl font-bold mt-2 text-white">${formatDate(event.Data)}</h2></div>
-                        <div class="text-right shrink-0"><span class="bg-gray-700/50 px-2 py-1 rounded-lg text-sm font-bold text-gray-300 block">${event.Orario || '--:--'}</span></div>
+                        <div>
+                            <span class="bg-[#333333] border border-[#555555] text-[#ffffff] text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">${event['Tipo Evento']}</span>
+                            <h2 class="text-[22px] font-bold mt-2.5 text-[#ffffff] m-0 leading-tight">${formatDate(event.Data)}</h2>
+                        </div>
+                        <div class="text-right shrink-0"><span class="bg-[#333333] px-2.5 py-1.5 rounded-lg text-sm font-bold text-[#ffffff] block border border-[#555555] shadow-sm">${event.Orario || '--:--'}</span></div>
                     </div>
                     ${formationBlock}${songsBlock}${notesBlock}
                 </div>`;
             });
-            container.innerHTML = htmlContent || `<p class="text-center text-gray-500">Nessun evento in programma.</p>`;
+            container.innerHTML = htmlContent || `<p class="text-center text-[#888888] font-light">Nessun evento in programma.</p>`;
         }
 
         fetchCalendarData();
