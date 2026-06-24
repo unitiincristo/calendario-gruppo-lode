@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lode-app-v6';
+const CACHE_NAME = 'lode-app-v7';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -39,37 +39,21 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (e) => {
-    if (e.request.url.includes('docs.google.com/spreadsheets')) {
-        // Stale-While-Revalidate per i dati CSV (Foglio Google)
-        e.respondWith(
-            caches.open(CACHE_NAME).then((cache) => {
-                return cache.match(e.request).then((cachedResponse) => {
-                    const fetchPromise = fetch(e.request).then((networkResponse) => {
-                        cache.put(e.request, networkResponse.clone());
-                        return networkResponse;
-                    }).catch(() => {
-                        return cachedResponse;
-                    });
-                    return cachedResponse || fetchPromise;
+    // Network-First per TUTTO (HTML, CSS, JS, e soprattutto il CSV Foglio Google)
+    // Questo previene l'effetto "altalena" dove mostrava prima i dati vecchi e poi i nuovi
+    e.respondWith(
+        fetch(e.request).then((networkResponse) => {
+            // Se la rete funziona ed è una GET valida, aggiorniamo la cache
+            if (e.request.method === 'GET' && e.request.url.startsWith('http')) {
+                const responseClone = networkResponse.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(e.request, responseClone);
                 });
-            })
-        );
-    } else {
-        // Network-First per l'interfaccia (HTML, CSS, JS) e icone
-        e.respondWith(
-            fetch(e.request).then((networkResponse) => {
-                // Se la rete funziona ed è una GET valida, aggiorniamo la cache
-                if (e.request.method === 'GET' && e.request.url.startsWith('http')) {
-                    const responseClone = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(e.request, responseClone);
-                    });
-                }
-                return networkResponse;
-            }).catch(() => {
-                // Se fallisce (utente offline), restituiamo la versione in cache
-                return caches.match(e.request);
-            })
-        );
-    }
+            }
+            return networkResponse;
+        }).catch(() => {
+            // Se fallisce (utente offline), restituiamo la versione salvata in cache
+            return caches.match(e.request);
+        })
+    );
 });
