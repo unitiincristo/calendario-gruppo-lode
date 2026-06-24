@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lode-app-v5';
+const CACHE_NAME = 'lode-app-v6';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -7,7 +7,6 @@ const STATIC_ASSETS = [
     'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4',
     'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js'
 ];
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJvRESTof_RVpmAyb5vkGX7mAweXbXESyE3BaaX81f4YS3PCo_4c395DvcP7q-iBwr59diu4DLzzCt/pub?gid=1040693821&single=true&output=csv';
 
 self.addEventListener('install', (e) => {
     e.waitUntil(
@@ -33,9 +32,15 @@ self.addEventListener('activate', (e) => {
     self.clients.claim();
 });
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('fetch', (e) => {
     if (e.request.url.includes('docs.google.com/spreadsheets')) {
-        // Stale-While-Revalidate per i dati CSV
+        // Stale-While-Revalidate per i dati CSV (Foglio Google)
         e.respondWith(
             caches.open(CACHE_NAME).then((cache) => {
                 return cache.match(e.request).then((cachedResponse) => {
@@ -50,20 +55,20 @@ self.addEventListener('fetch', (e) => {
             })
         );
     } else {
-        // Cache-First per le risorse statiche
+        // Network-First per l'interfaccia (HTML, CSS, JS) e icone
         e.respondWith(
-            caches.match(e.request).then((response) => {
-                return response || fetch(e.request).then((networkResponse) => {
-                    if (e.request.method === 'GET' && e.request.url.startsWith('http')) {
-                        return caches.open(CACHE_NAME).then((cache) => {
-                            cache.put(e.request, networkResponse.clone());
-                            return networkResponse;
-                        });
-                    }
-                    return networkResponse;
-                }).catch(() => {
-                    // Ignora errori offline per file non essenziali
-                });
+            fetch(e.request).then((networkResponse) => {
+                // Se la rete funziona ed è una GET valida, aggiorniamo la cache
+                if (e.request.method === 'GET' && e.request.url.startsWith('http')) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(e.request, responseClone);
+                    });
+                }
+                return networkResponse;
+            }).catch(() => {
+                // Se fallisce (utente offline), restituiamo la versione in cache
+                return caches.match(e.request);
             })
         );
     }
