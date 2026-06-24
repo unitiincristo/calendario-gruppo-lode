@@ -53,6 +53,7 @@
             </div>
             <span id="status-badge" class="bg-[#333333] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-medium border border-[#555555]">Caricamento...</span>
         </div>
+        <div id="bacheca-container" class="hidden max-w-md mx-auto px-4 pb-4"></div>
     </header>
 
     <main class="max-w-md mx-auto p-4 pb-12">
@@ -66,8 +67,6 @@
                 🍎 Hai un iPhone? Tocca <strong>Condividi</strong> e seleziona <strong>"Aggiungi a schermata Home"</strong>.
             </p>
         </div>
-
-        <div id="bacheca-container" class="hidden mb-6"></div>
 
         <div>
             <h2 class="text-sm font-bold text-[#888888] uppercase tracking-widest mb-4 pl-1">Prossimi Appuntamenti</h2>
@@ -272,7 +271,12 @@
                     currentMonth = monthStr;
                 }
 
-                let formationBlock = event.Formazione ? `<div class="border-t border-b border-[#333333] py-3 mt-4"><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-1">Formazione</p><p class="text-sm text-[#aaaaaa] font-light">${event.Formazione}</p></div>` : '';
+                let formationBlock = '';
+                if (event.Formazione) {
+                    const members = event.Formazione.split(',').map(m => m.trim()).filter(m => m !== '');
+                    const chips = members.map(m => `<span class="bg-white/[0.05] text-[#cccccc] text-xs font-medium px-2.5 py-1 rounded-md border border-white/[0.05] shadow-sm">${m}</span>`).join('');
+                    formationBlock = `<div class="border-t border-b border-[#333333] py-3 mt-4"><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-2">Formazione</p><div class="flex flex-wrap gap-2">${chips}</div></div>`;
+                }
                 
                 let songsBlock = '';
                 if (event['Scaletta Canzoni']) {
@@ -309,7 +313,23 @@
                     ? "bg-gradient-to-br from-[#222222] to-[#151515] p-6 shadow-[0_4px_20px_rgba(255,255,255,0.04)] border border-[#444444] relative overflow-hidden" 
                     : "bg-white/[0.03] p-5 shadow-[0_4px_10px_rgba(0,0,0,0.5)] border border-white/[0.05]";
                 
-                const heroBadge = isHero ? `<div class="absolute top-0 right-0 bg-[#ffffff] text-[#000000] text-[9px] font-bold px-3 py-1.5 rounded-bl-xl uppercase tracking-widest shadow-md">Imminente</div>` : '';
+                // CALCOLO BADGE TEMPORALE (OGGI / DOMANI / TRA X GIORNI)
+                let dateBadge = ''; // Per il badge assoluto in alto a destra (solo Hero)
+                let inlineBadge = ''; // Per il badge sopra l'orario (altre card)
+                const evDate = new Date(event.Data);
+                evDate.setHours(0,0,0,0);
+                const todayBadge = new Date();
+                todayBadge.setHours(0,0,0,0);
+                const diffTime = evDate - todayBadge;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (isHero) {
+                    if (diffDays === 0) dateBadge = `<div class="absolute top-0 right-0 bg-[#e53e3e] text-[#ffffff] text-[10px] font-bold px-3 py-1.5 rounded-bl-xl uppercase tracking-widest shadow-md flex items-center gap-1"><span class="animate-pulse">🔥</span> OGGI</div>`;
+                    else if (diffDays === 1) dateBadge = `<div class="absolute top-0 right-0 bg-[#ecc94b] text-[#000000] text-[10px] font-bold px-3 py-1.5 rounded-bl-xl uppercase tracking-widest shadow-md flex items-center gap-1">⏳ DOMANI</div>`;
+                    else dateBadge = `<div class="absolute top-0 right-0 bg-[#ffffff] text-[#000000] text-[9px] font-bold px-3 py-1.5 rounded-bl-xl uppercase tracking-widest shadow-md">TRA ${diffDays} GIORNI</div>`;
+                }
+                // Rimosso il badge temporale dalle altre card per mantenere pulizia visiva
+                
                 const dateSize = isHero ? "text-[32px]" : "text-[22px]";
                 
                 // TITOLO SQUADRATO, GRANDE E BEN VISIBILE
@@ -317,13 +337,16 @@
 
                 const staggerClass = index < 3 ? `stagger-${index + 1}` : '';
                 htmlContent += `<div class="rounded-2xl ${cardStyle} mb-4 animate-fade-in-up ${staggerClass}">
-                    ${heroBadge}
+                    ${dateBadge}
                     <div class="flex justify-between items-start gap-4">
                         <div class="flex-1">
                             <span class="bg-[#333333] text-[#ffffff] border border-[#666666] ${titleClass} font-bold rounded-lg uppercase tracking-widest shadow-md inline-block mb-2">${calendarTitle}</span>
                             <h2 class="${dateSize} font-bold mt-1 text-[#ffffff] m-0 leading-tight">${formatDate(event.Data)}</h2>
                         </div>
-                        <div class="text-right shrink-0 mt-1"><span class="bg-[#333333] px-2.5 py-1.5 rounded-lg text-sm font-bold text-[#ffffff] block border border-[#555555] shadow-sm">${event.Orario || '--:--'}</span></div>
+                        <div class="flex flex-col items-end gap-1.5 shrink-0 mt-1">
+                            ${inlineBadge}
+                            <span class="bg-[#333333] px-2.5 py-1.5 rounded-lg text-sm font-bold text-[#ffffff] block border border-[#555555] shadow-sm">${event.Orario || '--:--'}</span>
+                        </div>
                     </div>
                     ${formationBlock}${songsBlock}${notesBlock}${calendarBtn}
                 </div>`;
