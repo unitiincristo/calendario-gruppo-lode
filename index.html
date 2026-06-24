@@ -46,7 +46,6 @@
             </p>
         </div>
 
-        <!-- BANNER BACHECA -->
         <div id="bacheca-container" class="hidden mb-6"></div>
 
         <div>
@@ -102,13 +101,13 @@
             return `${months[parseInt(parts[1], 10) - 1]} ${parts[0]}`;
         }
 
-        // GENERATORE ICS (Risolve i bug del fuso orario e di Google Calendar)
+        // GENERATORE ICS
         window.downloadICS = function(titleEnc, dateStr, timeStr) {
             const title = decodeURIComponent(titleEnc);
             if(!dateStr || !dateStr.includes('-')) return;
             const dStr = dateStr.replace(/-/g, '');
             let tStart = "090000";
-            let tEnd = "110000"; // Calcola in automatico 2 ore di durata per la lode
+            let tEnd = "110000"; 
             
             if(timeStr && timeStr.includes(':')) {
                 const parts = timeStr.split(':');
@@ -199,9 +198,8 @@
 
             events.forEach((event, index) => {
                 const monthStr = getMonthName(event.Data);
-                const isHero = index === 0; // Il primo in lista diventa l'evento "Imminente"
+                const isHero = index === 0;
 
-                // Creazione del Divisore Mensile
                 if (monthStr !== currentMonth) {
                     htmlContent += `
                     <div class="${index === 0 ? 'mb-5' : 'mt-10 mb-5'} border-b border-white/[0.1] pb-2 flex items-center gap-2">
@@ -243,7 +241,6 @@
                         📅 Salva nel Calendario
                     </button>`;
 
-                // LOGICA DESIGN HERO (Primo evento in evidenza)
                 const cardStyle = isHero 
                     ? "bg-gradient-to-br from-[#222222] to-[#151515] p-6 shadow-[0_4px_20px_rgba(255,255,255,0.04)] border border-[#444444] relative overflow-hidden" 
                     : "bg-white/[0.03] p-5 shadow-[0_4px_10px_rgba(0,0,0,0.5)] border border-white/[0.05]";
@@ -251,12 +248,15 @@
                 const heroBadge = isHero ? `<div class="absolute top-0 right-0 bg-[#ffffff] text-[#000000] text-[9px] font-bold px-3 py-1.5 rounded-bl-xl uppercase tracking-widest shadow-md">Imminente</div>` : '';
                 const dateSize = isHero ? "text-[32px]" : "text-[22px]";
 
+                // IL NUOVO STILE DEL TITOLO AUMENTATO E PIÙ VISIBILE
+                const titleSize = isHero ? "text-[14px] px-3.5 py-1.5" : "text-[12px] px-3 py-1";
+
                 htmlContent += `<div class="rounded-2xl ${cardStyle}">
                     ${heroBadge}
                     <div class="flex justify-between items-start gap-4">
-                        <div>
-                            <span class="bg-[#333333] text-[#ffffff] border border-[#555555] text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">${calendarTitle}</span>
-                            <h2 class="${dateSize} font-bold mt-2.5 text-[#ffffff] m-0 leading-tight">${formatDate(event.Data)}</h2>
+                        <div class="flex-1">
+                            <span class="bg-[#333333] text-[#ffffff] border border-[#666666] ${titleSize} font-bold rounded-lg uppercase tracking-widest shadow-md inline-block mb-2">${calendarTitle}</span>
+                            <h2 class="${dateSize} font-bold mt-1 text-[#ffffff] m-0 leading-tight">${formatDate(event.Data)}</h2>
                         </div>
                         <div class="text-right shrink-0 mt-1"><span class="bg-[#333333] px-2.5 py-1.5 rounded-lg text-sm font-bold text-[#ffffff] block border border-[#555555] shadow-sm">${event.Orario || '--:--'}</span></div>
                     </div>
@@ -271,10 +271,10 @@
             events.forEach(event => {
                 let calendarTitle = event['Titolo Calendario'] || event['Tipo Evento'] || 'Evento';
                 htmlContent += `
-                <div class="bg-white/[0.02] rounded-xl p-4 border border-white/[0.03] opacity-60 grayscale-[50%]">
+                <div class="bg-white/[0.02] rounded-xl p-4 border border-white/[0.03] opacity-60 grayscale-[50%] mb-3">
                     <div class="flex justify-between items-center">
                         <div>
-                            <span class="text-[#888888] text-[9px] font-bold uppercase tracking-wider">${calendarTitle}</span>
+                            <span class="text-[#aaaaaa] text-[11px] font-bold uppercase tracking-wider">${calendarTitle}</span>
                             <h2 class="text-lg font-bold text-[#aaaaaa] m-0 mt-1">${formatDate(event.Data)}</h2>
                         </div>
                         <span class="text-xs font-bold text-[#666666] bg-[#222222] px-2 py-1 rounded-md border border-[#333333]">${event.Orario || '--:--'}</span>
