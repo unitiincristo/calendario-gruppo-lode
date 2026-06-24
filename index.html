@@ -46,8 +46,10 @@
             </p>
         </div>
 
+        <!-- BANNER BACHECA -->
+        <div id="bacheca-container" class="hidden mb-6"></div>
+
         <div>
-            <h2 class="text-sm font-bold text-[#888888] uppercase tracking-widest mb-4 pl-1">Prossimi Appuntamenti</h2>
             <div id="upcoming-events-container" class="space-y-5"></div>
         </div>
     </main>
@@ -93,6 +95,13 @@
             return `${parts[2]} ${months[parseInt(parts[1], 10) - 1]}`;
         }
 
+        function getMonthName(dateString) {
+            if (!dateString || !dateString.includes('-')) return '';
+            const parts = dateString.split('-');
+            const months = ['GENNAIO', 'FEBBRAIO', 'MARZO', 'APRILE', 'MAGGIO', 'GIUGNO', 'LUGLIO', 'AGOSTO', 'SETTEMBRE', 'OTTOBRE', 'NOVEMBRE', 'DICEMBRE'];
+            return `${months[parseInt(parts[1], 10) - 1]} ${parts[0]}`;
+        }
+
         // GENERATORE ICS (Risolve i bug del fuso orario e di Google Calendar)
         window.downloadICS = function(titleEnc, dateStr, timeStr) {
             const title = decodeURIComponent(titleEnc);
@@ -108,16 +117,7 @@
                 tEnd = endHour + parts[1] + "00";
             }
             
-            const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Sabaoth Lode App//IT
-BEGIN:VEVENT
-SUMMARY:${title}
-DTSTART;TZID=Europe/Rome:${dStr}T${tStart}
-DTEND;TZID=Europe/Rome:${dStr}T${tEnd}
-DESCRIPTION:Promemoria salvato da Sabaoth Lode App
-END:VEVENT
-END:VCALENDAR`;
+            const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Sabaoth Lode App//IT\nBEGIN:VEVENT\nSUMMARY:${title}\nDTSTART;TZID=Europe/Rome:${dStr}T${tStart}\nDTEND;TZID=Europe/Rome:${dStr}T${tEnd}\nDESCRIPTION:Promemoria salvato da Sabaoth Lode App\nEND:VEVENT\nEND:VCALENDAR`;
 
             const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
             const url = window.URL.createObjectURL(blob);
@@ -154,10 +154,25 @@ END:VCALENDAR`;
         function processEvents(events) {
             const upcomingContainer = document.getElementById('upcoming-events-container');
             const pastContainer = document.getElementById('past-events-container');
+            const bachecaContainer = document.getElementById('bacheca-container');
+            
             const today = new Date();
             today.setHours(0,0,0,0);
             let upcoming = [];
             let past = [];
+
+            // GESTIONE BACHECA
+            const rowWithBacheca = events.find(e => e.Bacheca && e.Bacheca.trim() !== '');
+            if (rowWithBacheca) {
+                bachecaContainer.innerHTML = `
+                    <div class="bg-gradient-to-r from-[#2a2a2a] to-[#1f1f1f] border-l-4 border-[#ffaa00] p-4 rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.5)] flex items-start gap-3">
+                        <span class="text-xl">📢</span>
+                        <div class="text-[#e0e0e0] text-sm font-medium leading-snug mt-0.5">${rowWithBacheca.Bacheca.trim()}</div>
+                    </div>`;
+                bachecaContainer.classList.remove('hidden');
+            } else {
+                bachecaContainer.classList.add('hidden');
+            }
 
             events.forEach(event => {
                 if (!event.Data || !event['Tipo Evento']) return;
@@ -169,22 +184,41 @@ END:VCALENDAR`;
             upcoming.sort((a, b) => new Date(a.Data) - new Date(b.Data));
             past.sort((a, b) => new Date(b.Data) - new Date(a.Data));
 
-            renderCards(upcoming.slice(0, 4), upcomingContainer, "Nessun evento in programma.");
-            renderCards(past, pastContainer, "Nessun evento passato.", true);
+            renderUpcoming(upcoming, upcomingContainer);
+            renderPast(past, pastContainer);
         }
 
-        function renderCards(events, container, emptyMessage, isPast = false) {
+        function renderUpcoming(events, container) {
+            if(events.length === 0) {
+                container.innerHTML = `<p class="text-center text-[#888888] font-light py-8">Nessun evento in programma.</p>`;
+                return;
+            }
+
             let htmlContent = '';
-            events.forEach(event => {
-                let formationBlock = event.Formazione ? `<div class="border-t border-b border-[#333333] py-3"><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-1">Formazione</p><p class="text-sm text-[#aaaaaa] font-light">${event.Formazione}</p></div>` : '';
+            let currentMonth = '';
+
+            events.forEach((event, index) => {
+                const monthStr = getMonthName(event.Data);
+                const isHero = index === 0; // Il primo in lista diventa l'evento "Imminente"
+
+                // Creazione del Divisore Mensile
+                if (monthStr !== currentMonth) {
+                    htmlContent += `
+                    <div class="${index === 0 ? 'mb-5' : 'mt-10 mb-5'} border-b border-white/[0.1] pb-2 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-[#888888]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <h3 class="text-[#888888] text-xs font-bold tracking-[0.2em] uppercase">${monthStr}</h3>
+                    </div>`;
+                    currentMonth = monthStr;
+                }
+
+                let formationBlock = event.Formazione ? `<div class="border-t border-b border-[#333333] py-3 mt-4"><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-1">Formazione</p><p class="text-sm text-[#aaaaaa] font-light">${event.Formazione}</p></div>` : '';
                 
                 let songsBlock = '';
                 if (event['Scaletta Canzoni']) {
                     const separator = event['Scaletta Canzoni'].includes('|') ? '|' : ',';
                     const songs = event['Scaletta Canzoni'].split(separator).filter(s => s.trim() !== '');
                     
-                    // Aggiunto pulsante YouTube di fianco a ogni canzone
-                    songsBlock = `<div><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-2">Scaletta</p><ul class="space-y-2 text-sm">${songs.map((s, i) => {
+                    songsBlock = `<div class="mt-4"><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-2">Scaletta</p><ul class="space-y-2 text-sm">${songs.map((s, i) => {
                         const songClean = s.trim();
                         const ytLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(songClean)}`;
                         return `
@@ -200,30 +234,54 @@ END:VCALENDAR`;
                     }).join('')}</ul></div>`;
                 }
 
-                let notesBlock = event['Note e Prove'] ? `<div class="bg-white/[0.03] border border-white/[0.05] rounded-xl p-3 text-[13px] text-[#aaaaaa] mt-3 font-light tracking-wide">📌 ${event['Note e Prove']}</div>` : '';
+                let notesBlock = event['Note e Prove'] ? `<div class="bg-white/[0.03] border border-white/[0.05] rounded-xl p-3 text-[13px] text-[#aaaaaa] mt-4 font-light tracking-wide">📌 ${event['Note e Prove']}</div>` : '';
 
-                // Logica del Titolo Dinamico dal foglio
                 let calendarTitle = event['Titolo Calendario'] || event['Tipo Evento'] || 'Evento Lode';
                 
-                let calendarBtn = !isPast ? `
+                let calendarBtn = `
                     <button onclick="downloadICS('${encodeURIComponent(calendarTitle)}', '${event.Data}', '${event.Orario}')" class="mt-4 flex items-center justify-center gap-2 w-full bg-white/[0.05] hover:bg-white/[0.1] text-[#aaaaaa] text-xs py-2.5 rounded-lg border border-white/[0.05] transition-colors cursor-pointer">
                         📅 Salva nel Calendario
-                    </button>` : '';
+                    </button>`;
 
-                const opacityClass = isPast ? 'opacity-70 grayscale-[30%]' : '';
+                // LOGICA DESIGN HERO (Primo evento in evidenza)
+                const cardStyle = isHero 
+                    ? "bg-gradient-to-br from-[#222222] to-[#151515] p-6 shadow-[0_4px_20px_rgba(255,255,255,0.04)] border border-[#444444] relative overflow-hidden" 
+                    : "bg-white/[0.03] p-5 shadow-[0_4px_10px_rgba(0,0,0,0.5)] border border-white/[0.05]";
+                
+                const heroBadge = isHero ? `<div class="absolute top-0 right-0 bg-[#ffffff] text-[#000000] text-[9px] font-bold px-3 py-1.5 rounded-bl-xl uppercase tracking-widest shadow-md">Imminente</div>` : '';
+                const dateSize = isHero ? "text-[32px]" : "text-[22px]";
 
-                htmlContent += `<div class="bg-white/[0.03] rounded-2xl p-5 shadow-[0_4px_10px_rgba(0,0,0,0.5)] border border-white/[0.05] space-y-4 ${opacityClass}">
+                htmlContent += `<div class="rounded-2xl ${cardStyle}">
+                    ${heroBadge}
                     <div class="flex justify-between items-start gap-4">
                         <div>
-                            <span class="bg-[#333333] text-[#ffffff] border border-[#555555] text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">${event['Tipo Evento']}</span>
-                            <h2 class="text-[22px] font-bold mt-2.5 text-[#ffffff] m-0 leading-tight">${formatDate(event.Data)}</h2>
+                            <span class="bg-[#333333] text-[#ffffff] border border-[#555555] text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">${calendarTitle}</span>
+                            <h2 class="${dateSize} font-bold mt-2.5 text-[#ffffff] m-0 leading-tight">${formatDate(event.Data)}</h2>
                         </div>
-                        <div class="text-right shrink-0"><span class="bg-[#333333] px-2.5 py-1.5 rounded-lg text-sm font-bold text-[#ffffff] block border border-[#555555] shadow-sm">${event.Orario || '--:--'}</span></div>
+                        <div class="text-right shrink-0 mt-1"><span class="bg-[#333333] px-2.5 py-1.5 rounded-lg text-sm font-bold text-[#ffffff] block border border-[#555555] shadow-sm">${event.Orario || '--:--'}</span></div>
                     </div>
                     ${formationBlock}${songsBlock}${notesBlock}${calendarBtn}
                 </div>`;
             });
-            container.innerHTML = htmlContent || `<p class="text-center text-[#888888] font-light py-8">${emptyMessage}</p>`;
+            container.innerHTML = htmlContent;
+        }
+
+        function renderPast(events, container) {
+            let htmlContent = '';
+            events.forEach(event => {
+                let calendarTitle = event['Titolo Calendario'] || event['Tipo Evento'] || 'Evento';
+                htmlContent += `
+                <div class="bg-white/[0.02] rounded-xl p-4 border border-white/[0.03] opacity-60 grayscale-[50%]">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-[#888888] text-[9px] font-bold uppercase tracking-wider">${calendarTitle}</span>
+                            <h2 class="text-lg font-bold text-[#aaaaaa] m-0 mt-1">${formatDate(event.Data)}</h2>
+                        </div>
+                        <span class="text-xs font-bold text-[#666666] bg-[#222222] px-2 py-1 rounded-md border border-[#333333]">${event.Orario || '--:--'}</span>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = htmlContent || `<p class="text-center text-[#888888] font-light py-4 text-sm">Nessun evento passato.</p>`;
         }
 
         fetchCalendarData();
