@@ -124,9 +124,12 @@
 
         function formatDate(dateString) {
             if (!dateString || !dateString.includes('-')) return dateString;
+            const dateObj = new Date(dateString);
+            const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+            const dayName = days[dateObj.getDay()];
             const parts = dateString.split('-');
-            const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-            return `${parts[2]} ${months[parseInt(parts[1], 10) - 1]}`;
+            // Restituisce "Sabato 27" invece di "27 Giu"
+            return `${dayName} ${parts[2]}`;
         }
 
         function getMonthName(dateString) {
