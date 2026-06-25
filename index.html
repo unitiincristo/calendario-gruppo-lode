@@ -187,9 +187,14 @@
                 Papa.parse(csvText, {
                     header: true, skipEmptyLines: true,
                     complete: function(results) { 
-                        localStorage.setItem('lodeAppData', JSON.stringify(results.data));
-                        allEvents = results.data;
-                        processEvents(allEvents); 
+                        const newDataStr = JSON.stringify(results.data);
+                        // Ridisegniamo la UI solo se i dati dal server sono effettivamente cambiati
+                        // Questo previene il flash e la doppia animazione quando si apre l'app
+                        if (newDataStr !== cachedData) {
+                            localStorage.setItem('lodeAppData', newDataStr);
+                            allEvents = results.data;
+                            processEvents(allEvents); 
+                        }
                         badge.innerText = "Aggiornato";
                         badge.className = "bg-white/[0.03] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-light border border-white/[0.05]";
                     }
