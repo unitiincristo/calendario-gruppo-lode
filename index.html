@@ -33,15 +33,15 @@
             <button onclick="toggleSidebar()" class="text-[#888888] text-2xl font-bold p-2">&times;</button>
         </div>
         <div class="p-4 border-b border-white/[0.05] space-y-2">
-            <button onclick="switchView('calendario')" id="nav-calendario" class="w-full text-left bg-white/[0.05] text-white p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
+            <button onclick="switchView('calendario', true)" id="nav-calendario" class="w-full text-left bg-white/[0.05] text-white p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
                 <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 Calendario
             </button>
-            <button onclick="switchView('mansioni')" id="nav-mansioni" class="w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
+            <button onclick="switchView('mansioni', true)" id="nav-mansioni" class="w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
                 <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 Mansioni
             </button>
-            <button onclick="switchView('canzoni')" id="nav-canzoni" class="w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
+            <button onclick="switchView('canzoni', true)" id="nav-canzoni" class="w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
                 <svg class="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
                 Archivio Canzoni
             </button>
@@ -245,7 +245,7 @@
         let allMansioni = [];
         let allCanzoni = [];
 
-        function switchView(viewName) {
+        function switchView(viewName, fromNav = false) {
             sessionStorage.setItem('lodeAppCurrentView', viewName);
             
             const calView = document.getElementById('view-calendario');
@@ -280,9 +280,10 @@
                 canView.classList.remove('hidden');
                 navCan.className = "w-full text-left bg-white/[0.05] text-white p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
                 titleElement.innerText = "Archivio Canzoni";
-                if (allCanzoni.length === 0) fetchCanzoniData();
             }
-            toggleSidebar();
+            if (fromNav) {
+                toggleSidebar();
+            }
         }
 
         async function fetchMansioniData() {
@@ -293,7 +294,7 @@
             }
 
             try {
-                const response = await fetch(MANSIONI_CSV_URL);
+                const response = await fetch(MANSIONI_CSV_URL + '&t=' + new Date().getTime());
                 const csvText = await response.text();
                 Papa.parse(csvText, {
                     header: true, skipEmptyLines: true,
@@ -342,19 +343,24 @@
                 const staggerClass = index < 5 ? `stagger-${index + 1}` : '';
                 
                 htmlContent += `
-                    <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] shadow-[0_4px_10px_rgba(0,0,0,0.5)] animate-fade-in-up ${staggerClass} mb-4">
-                        <div class="flex items-center gap-3 mb-4 border-b border-white/[0.05] pb-3">
+                    <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] shadow-[0_4px_10px_rgba(0,0,0,0.5)] animate-fade-in-up ${staggerClass} mb-4 cursor-pointer hover:bg-white/[0.04] transition-colors" onclick="toggleMansione(${index})">
+                        <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-full ${c.bg} flex items-center justify-center ${c.text} font-bold text-lg border ${c.border} shrink-0">
                                 ${m.Nome.charAt(0).toUpperCase()}
                             </div>
-                            <div>
+                            <div class="flex-1">
                                 <h3 class="text-white font-bold text-lg m-0 leading-tight">${m.Nome}</h3>
                                 <p class="${c.text} text-xs font-semibold uppercase tracking-widest mt-0.5">${m.Ruolo || 'Membro'}</p>
                             </div>
+                            <div class="text-[#888888] shrink-0">
+                                <svg id="mansione-caret-${index}" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
                         </div>
-                        <ul class="m-0 p-0 list-none">
-                            ${tasks || '<li class="text-[#666666] text-sm">Nessuna mansione assegnata.</li>'}
-                        </ul>
+                        <div id="mansione-tasks-${index}" class="hidden mt-4 pt-4 border-t border-white/[0.05]">
+                            <ul class="m-0 p-0 list-none">
+                                ${tasks || '<li class="text-[#666666] text-sm">Nessuna mansione assegnata.</li>'}
+                            </ul>
+                        </div>
                     </div>
                 `;
             });
@@ -366,10 +372,11 @@
             if(cachedData) {
                 allCanzoni = JSON.parse(cachedData);
                 renderCanzoni(allCanzoni);
+                if (allEvents.length > 0) processEvents(allEvents);
             }
 
             try {
-                const response = await fetch(CANZONI_CSV_URL);
+                const response = await fetch(CANZONI_CSV_URL + '&t=' + new Date().getTime());
                 const csvText = await response.text();
                 Papa.parse(csvText, {
                     header: true, skipEmptyLines: true,
@@ -379,6 +386,7 @@
                             localStorage.setItem('lodeAppCanzoni', newDataStr);
                             allCanzoni = results.data;
                             renderCanzoni(allCanzoni); 
+                            if (allEvents.length > 0) processEvents(allEvents);
                         }
                     }
                 });
@@ -459,6 +467,19 @@
 
         let allEvents = []; // Variabile globale per la ricerca
 
+        function getSongLinks(songName) {
+            if (!allCanzoni || allCanzoni.length === 0) return null;
+            const normalizedName = songName.toLowerCase().replace(/\(.*?\)/g, '').trim();
+            for (let c of allCanzoni) {
+                if (!c.Titolo) continue;
+                const normalizedTitolo = c.Titolo.toLowerCase().replace(/\(.*?\)/g, '').trim();
+                if (normalizedName === normalizedTitolo || normalizedName.includes(normalizedTitolo)) {
+                    return c;
+                }
+            }
+            return null;
+        }
+
         document.getElementById('search-input').addEventListener('input', function(e) {
             const query = e.target.value.toLowerCase();
             processEvents(allEvents, false, query); 
@@ -473,7 +494,7 @@
             }
 
             try {
-                const response = await fetch(SHEET_CSV_URL);
+                const response = await fetch(SHEET_CSV_URL + '&t=' + new Date().getTime());
                 const csvText = await response.text();
                 Papa.parse(csvText, {
                     header: true, skipEmptyLines: true,
@@ -487,11 +508,16 @@
                             processEvents(allEvents); 
                         }
                         badge.innerText = "Aggiornato";
-                        badge.className = "bg-white/[0.03] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-light border border-white/[0.05]";
+                        badge.className = "bg-white/[0.03] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-light border border-white/[0.05] shrink-0";
                     }
                 });
             } catch (error) {
-                if(!cachedData) badge.innerText = "Sei Offline";
+                if(!cachedData) {
+                    badge.innerText = "Sei Offline";
+                } else {
+                    badge.innerText = "Offline (Dati salvati)";
+                    badge.className = "bg-white/[0.03] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-light border border-white/[0.05] shrink-0";
+                }
             }
         }
 
@@ -588,15 +614,28 @@
                     songsBlock = `<div class="mt-4"><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-2">Scaletta</p><ul class="space-y-2 text-sm">${songs.map((s, i) => {
                         const songClean = s.trim();
                         const ytLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(songClean)}`;
+                        const songData = getSongLinks(songClean);
+                        
+                        let fileButtons = '';
+                        if (songData && songData['Link Accordi']) {
+                            const urls = songData['Link Accordi'].split('|');
+                            fileButtons = `<a href="${urls[0].trim()}" target="_blank" class="text-emerald-400 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center justify-center shrink-0" title="Apri Accordi">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+                            </a>`;
+                        }
+
                         return `
                         <li class="bg-white/[0.03] px-3 py-2.5 rounded-xl border border-white/[0.05] flex justify-between items-center gap-2">
-                            <div class="flex gap-2 items-center">
-                                <span class="text-[#aaaaaa] font-bold">${i + 1}.</span> 
-                                <span class="text-[#ffffff]">${songClean}</span>
+                            <div class="flex gap-2 items-center min-w-0">
+                                <span class="text-[#aaaaaa] font-bold shrink-0">${i + 1}.</span> 
+                                <span class="text-[#ffffff] truncate">${songClean}</span>
                             </div>
-                            <a href="${ytLink}" target="_blank" class="text-[#ff4444] bg-[#ff4444]/10 p-2 rounded-lg border border-[#ff4444]/20 hover:bg-[#ff4444]/20 transition-colors flex items-center justify-center shrink-0">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.377.55a3.016 3.016 0 0 0-2.122 2.136C.005 8.08.005 12 .005 12s0 3.92.496 5.814a3.016 3.016 0 0 0 2.122 2.136c1.872.55 9.377.55 9.377.55s7.505 0 9.377-.55a3.016 3.016 0 0 0 2.122-2.136C24 15.92 24 12 24 12s0-3.92-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                            </a>
+                            <div class="flex gap-2 shrink-0">
+                                ${fileButtons}
+                                <a href="${ytLink}" target="_blank" class="text-[#ff4444] bg-[#ff4444]/10 p-2 rounded-lg border border-[#ff4444]/20 hover:bg-[#ff4444]/20 transition-colors flex items-center justify-center shrink-0" title="Cerca su YouTube">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.377.55a3.016 3.016 0 0 0-2.122 2.136C.005 8.08.005 12 .005 12s0 3.92.496 5.814a3.016 3.016 0 0 0 2.122 2.136c1.872.55 9.377.55 9.377.55s7.505 0 9.377-.55a3.016 3.016 0 0 0 2.122-2.136C24 15.92 24 12 24 12s0-3.92-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                </a>
+                            </div>
                         </li>`;
                     }).join('')}</ul></div>`;
                 }
@@ -723,7 +762,22 @@
             }
         }
 
+        function toggleMansione(id) {
+            const tasksDiv = document.getElementById(`mansione-tasks-${id}`);
+            const caret = document.getElementById(`mansione-caret-${id}`);
+            if(tasksDiv && caret) {
+                if(tasksDiv.classList.contains('hidden')) {
+                    tasksDiv.classList.remove('hidden');
+                    caret.classList.add('rotate-180');
+                } else {
+                    tasksDiv.classList.add('hidden');
+                    caret.classList.remove('rotate-180');
+                }
+            }
+        }
+
         fetchCalendarData();
+        fetchCanzoniData();
         
         // Restore view from session storage if exists
         const savedView = sessionStorage.getItem('lodeAppCurrentView');
