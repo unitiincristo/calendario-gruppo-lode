@@ -29,8 +29,25 @@
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/70 z-40 hidden transition-opacity" onclick="toggleSidebar()"></div>
     <aside id="sidebar" class="fixed top-0 left-0 w-4/5 max-w-sm h-full bg-[#1a1a1a] border-r border-white/[0.05] z-50 transform -translate-x-full transition-transform duration-300 ease-in-out shadow-[4px_0_15px_rgba(0,0,0,0.8)] flex flex-col">
         <div class="p-5 border-b border-white/[0.05] flex justify-between items-center">
-            <h2 class="text-lg font-bold text-[#aaaaaa]">Archivio Eventi</h2>
+            <h2 class="text-lg font-bold text-[#aaaaaa]">Menu</h2>
             <button onclick="toggleSidebar()" class="text-[#888888] text-2xl font-bold p-2">&times;</button>
+        </div>
+        <div class="p-4 border-b border-white/[0.05] space-y-2">
+            <button onclick="switchView('calendario')" id="nav-calendario" class="w-full text-left bg-white/[0.05] text-white p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
+                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                Calendario
+            </button>
+            <button onclick="switchView('mansioni')" id="nav-mansioni" class="w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
+                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                Mansioni
+            </button>
+            <button onclick="switchView('canzoni')" id="nav-canzoni" class="w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
+                <svg class="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+                Archivio Canzoni
+            </button>
+        </div>
+        <div class="p-4 border-b border-white/[0.05] flex items-center justify-between">
+            <h3 class="text-sm font-bold text-[#888888] uppercase tracking-widest">Archivio Eventi</h3>
         </div>
         <div class="p-4 border-b border-white/[0.05]">
             <div class="relative w-full">
@@ -61,7 +78,7 @@
         <div id="bacheca-container" class="hidden max-w-md mx-auto px-4 pb-4"></div>
     </header>
 
-    <main class="max-w-md mx-auto p-4 pb-12">
+    <main id="view-calendario" class="max-w-md mx-auto p-4 pb-12">
         <div id="install-container" class="hidden mb-6 bg-white/[0.03] rounded-xl p-5 shadow-[0_4px_10px_rgba(0,0,0,0.5)] border border-white/[0.05] text-center">
             <h3 class="font-bold text-[#ffffff] mb-2 text-lg">Installa l'App</h3>
             <p class="text-[#aaaaaa] text-sm mb-4 font-light">Accedi più velocemente al calendario direttamente dalla Home.</p>
@@ -93,8 +110,48 @@
         </div>
     </main>
 
+    <main id="view-mansioni" class="hidden max-w-md mx-auto p-4 pb-12">
+        <h2 class="text-lg font-black text-white uppercase tracking-widest mb-4 pl-1 drop-shadow-md">Mansioni Gruppo</h2>
+        <div class="mb-6">
+            <div class="relative w-full">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#666666]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
+                <input type="text" id="search-mansioni" placeholder="Cerca persona..." class="w-full bg-[#222222] border border-[#444444] text-[#ffffff] text-sm rounded-lg focus:ring-[#666666] focus:border-[#666666] block pl-9 p-2.5 transition-colors placeholder-[#888888] outline-none">
+            </div>
+        </div>
+        <div id="mansioni-container" class="space-y-4">
+            <!-- Loader -->
+            <div class="animate-pulse flex flex-col gap-3">
+                <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] h-24"></div>
+                <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] h-24"></div>
+            </div>
+        </div>
+    </main>
+
+    <main id="view-canzoni" class="hidden max-w-md mx-auto p-4 pb-12">
+        <h2 class="text-lg font-black text-white uppercase tracking-widest mb-4 pl-1 drop-shadow-md">Archivio Canzoni</h2>
+        <div class="mb-6">
+            <div class="relative w-full">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#666666]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
+                <input type="text" id="search-canzoni" placeholder="Cerca titolo o tonalità..." class="w-full bg-[#222222] border border-[#444444] text-[#ffffff] text-sm rounded-lg focus:ring-[#666666] focus:border-[#666666] block pl-9 p-2.5 transition-colors placeholder-[#888888] outline-none">
+            </div>
+        </div>
+        <div id="canzoni-container" class="space-y-4">
+            <!-- Loader -->
+            <div class="animate-pulse flex flex-col gap-3">
+                <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] h-32"></div>
+                <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] h-32"></div>
+            </div>
+        </div>
+    </main>
+
     <script>
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJvRESTof_RVpmAyb5vkGX7mAweXbXESyE3BaaX81f4YS3PCo_4c395DvcP7q-iBwr59diu4DLzzCt/pub?gid=1040693821&single=true&output=csv';
+        const MANSIONI_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJvRESTof_RVpmAyb5vkGX7mAweXbXESyE3BaaX81f4YS3PCo_4c395DvcP7q-iBwr59diu4DLzzCt/pub?gid=532902345&single=true&output=csv';
+        const CANZONI_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJvRESTof_RVpmAyb5vkGX7mAweXbXESyE3BaaX81f4YS3PCo_4c395DvcP7q-iBwr59diu4DLzzCt/pub?gid=157082409&single=true&output=csv';
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
@@ -150,11 +207,10 @@
 
         function getEventColorTheme(eventType) {
             const type = (eventType || '').toLowerCase();
-            if (type.includes('internazionale') || type.includes('domenicale')) return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
-            if (type.includes('giovani')) return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-            if (type.includes('prove') || type.includes('prova')) return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-            if (type.includes('preghiera')) return 'bg-violet-500/20 text-violet-300 border-violet-500/30';
-            if (type.includes('riunione')) return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+            if (type.includes('culto')) return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+            if (type.includes('evento')) return 'bg-red-600/20 text-red-400 border-red-600/30';
+            if (type.includes('prove') || type.includes('prova')) return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+            if (type.includes('studio')) return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
             // Default grigio scuro
             return 'bg-[#333333] text-[#ffffff] border-[#666666]';
         }
@@ -185,6 +241,215 @@
             link.click();
             document.body.removeChild(link);
         };
+
+        let allMansioni = [];
+        let allCanzoni = [];
+
+        function switchView(viewName) {
+            const calView = document.getElementById('view-calendario');
+            const manView = document.getElementById('view-mansioni');
+            const canView = document.getElementById('view-canzoni');
+            
+            const navCal = document.getElementById('nav-calendario');
+            const navMan = document.getElementById('nav-mansioni');
+            const navCan = document.getElementById('nav-canzoni');
+            
+            const titleElement = document.querySelector('header h1');
+
+            // Reset all
+            calView.classList.add('hidden');
+            manView.classList.add('hidden');
+            canView.classList.add('hidden');
+            
+            navCal.className = "w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
+            navMan.className = "w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
+            navCan.className = "w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
+
+            if (viewName === 'calendario') {
+                calView.classList.remove('hidden');
+                navCal.className = "w-full text-left bg-white/[0.05] text-white p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
+                titleElement.innerText = "Calendario Gruppo Lode";
+            } else if (viewName === 'mansioni') {
+                manView.classList.remove('hidden');
+                navMan.className = "w-full text-left bg-white/[0.05] text-white p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
+                titleElement.innerText = "Mansioni Gruppo";
+                if (allMansioni.length === 0) fetchMansioniData();
+            } else if (viewName === 'canzoni') {
+                canView.classList.remove('hidden');
+                navCan.className = "w-full text-left bg-white/[0.05] text-white p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
+                titleElement.innerText = "Archivio Canzoni";
+                if (allCanzoni.length === 0) fetchCanzoniData();
+            }
+            toggleSidebar();
+        }
+
+        async function fetchMansioniData() {
+            const cachedData = localStorage.getItem('lodeAppMansioni');
+            if(cachedData) {
+                allMansioni = JSON.parse(cachedData);
+                renderMansioni(allMansioni);
+            }
+
+            try {
+                const response = await fetch(MANSIONI_CSV_URL);
+                const csvText = await response.text();
+                Papa.parse(csvText, {
+                    header: true, skipEmptyLines: true,
+                    complete: function(results) { 
+                        const newDataStr = JSON.stringify(results.data);
+                        if (newDataStr !== cachedData) {
+                            localStorage.setItem('lodeAppMansioni', newDataStr);
+                            allMansioni = results.data;
+                            renderMansioni(allMansioni); 
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Errore fetch mansioni", error);
+            }
+        }
+
+        function getMemberColorClasses(nome) {
+            const n = (nome || '').toLowerCase();
+            if (n.includes('adrian')) return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' };
+            if (n.includes('daniele')) return { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30' };
+            if (n.includes('gianni')) return { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/30' };
+            if (n.includes('giona')) return { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30' };
+            if (n.includes('rebecca t')) return { bg: 'bg-violet-500/20', text: 'text-violet-400', border: 'border-violet-500/30' };
+            if (n.includes('rebecca g')) return { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/30' };
+            if (n.includes('gabriele')) return { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30' };
+            if (n.includes('pietro')) return { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30' };
+            return { bg: 'bg-zinc-500/20', text: 'text-zinc-400', border: 'border-zinc-500/30' };
+        }
+
+        function renderMansioni(mansioni) {
+            const container = document.getElementById('mansioni-container');
+            if (!mansioni || mansioni.length === 0) {
+                container.innerHTML = '<div class="text-[#888888] text-center p-6">Nessuna persona trovata.</div>';
+                return;
+            }
+
+            let htmlContent = '';
+            mansioni.forEach((m, index) => {
+                if (!m.Nome) return;
+                
+                const c = getMemberColorClasses(m.Nome);
+                const tasks = m.Mansioni ? m.Mansioni.split(',').map(t => `<li class="flex items-start gap-2 text-sm text-[#e0e0e0] mb-2"><svg class="w-4 h-4 ${c.text} mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> <span>${t.trim()}</span></li>`).join('') : '';
+                const staggerClass = index < 5 ? `stagger-${index + 1}` : '';
+                
+                htmlContent += `
+                    <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] shadow-[0_4px_10px_rgba(0,0,0,0.5)] animate-fade-in-up ${staggerClass} mb-4">
+                        <div class="flex items-center gap-3 mb-4 border-b border-white/[0.05] pb-3">
+                            <div class="w-10 h-10 rounded-full ${c.bg} flex items-center justify-center ${c.text} font-bold text-lg border ${c.border} shrink-0">
+                                ${m.Nome.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 class="text-white font-bold text-lg m-0 leading-tight">${m.Nome}</h3>
+                                <p class="${c.text} text-xs font-semibold uppercase tracking-widest mt-0.5">${m.Ruolo || 'Membro'}</p>
+                            </div>
+                        </div>
+                        <ul class="m-0 p-0 list-none">
+                            ${tasks || '<li class="text-[#666666] text-sm">Nessuna mansione assegnata.</li>'}
+                        </ul>
+                    </div>
+                `;
+            });
+            container.innerHTML = htmlContent;
+        }
+
+        async function fetchCanzoniData() {
+            const cachedData = localStorage.getItem('lodeAppCanzoni');
+            if(cachedData) {
+                allCanzoni = JSON.parse(cachedData);
+                renderCanzoni(allCanzoni);
+            }
+
+            try {
+                const response = await fetch(CANZONI_CSV_URL);
+                const csvText = await response.text();
+                Papa.parse(csvText, {
+                    header: true, skipEmptyLines: true,
+                    complete: function(results) { 
+                        const newDataStr = JSON.stringify(results.data);
+                        if (newDataStr !== cachedData) {
+                            localStorage.setItem('lodeAppCanzoni', newDataStr);
+                            allCanzoni = results.data;
+                            renderCanzoni(allCanzoni); 
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Errore fetch canzoni", error);
+            }
+        }
+
+        function renderCanzoni(canzoni) {
+            const container = document.getElementById('canzoni-container');
+            if (!canzoni || canzoni.length === 0) {
+                container.innerHTML = '<div class="text-[#888888] text-center p-6">Nessuna canzone trovata.</div>';
+                return;
+            }
+
+            let htmlContent = '';
+            canzoni.forEach((c, index) => {
+                if (!c.Titolo) return;
+                
+                const makeBtn = (url, label, color, icon) => {
+                    if (!url) return '';
+                    const urls = url.split('|');
+                    return urls.map((u, i) => {
+                        const lbl = urls.length > 1 ? `${label} ${i+1}` : label;
+                        return `<a href="${u.trim()}" target="_blank" class="flex items-center gap-2 bg-${color}-500/10 hover:bg-${color}-500/20 text-${color}-400 border border-${color}-500/30 px-3 py-2 rounded-xl text-xs font-bold transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${icon}</svg>
+                            ${lbl}
+                        </a>`;
+                    }).join('');
+                };
+
+                const btnAccordi = makeBtn(c['Link Accordi'], 'Accordi', 'emerald', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>');
+                const btnTesto = makeBtn(c['Link Testo'], 'Testo', 'blue', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>');
+                const btnTutorial = makeBtn(c['Link Tutorial'], 'Tutorial', 'fuchsia', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>');
+                const btnAudio = makeBtn(c['Link Audio'], 'Audio', 'amber', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>');
+
+                const staggerClass = index < 10 ? `stagger-${(index % 5) + 1}` : '';
+                
+                htmlContent += `
+                    <div class="bg-white/[0.03] p-4 rounded-2xl border border-white/[0.05] shadow-[0_4px_10px_rgba(0,0,0,0.5)] animate-fade-in-up ${staggerClass}">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-white font-bold text-lg m-0 leading-tight flex-1">${c.Titolo}</h3>
+                            ${c['Tonalità'] ? `<span class="bg-white/10 text-[#dddddd] text-xs font-bold px-2 py-1 rounded-md shrink-0 ml-2 whitespace-nowrap">${c['Tonalità']}</span>` : ''}
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-white/[0.05]">
+                            ${btnAccordi}${btnTesto}${btnTutorial}${btnAudio}
+                            ${(!btnAccordi && !btnTesto && !btnTutorial && !btnAudio) ? '<span class="text-xs text-[#666666]">Nessun file disponibile</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = htmlContent;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchMansioni = document.getElementById('search-mansioni');
+            if(searchMansioni) {
+                searchMansioni.addEventListener('input', function(e) {
+                    const query = e.target.value.toLowerCase();
+                    const filtered = allMansioni.filter(m => m.Nome && m.Nome.toLowerCase().includes(query));
+                    renderMansioni(filtered);
+                });
+            }
+            const searchCanzoni = document.getElementById('search-canzoni');
+            if(searchCanzoni) {
+                searchCanzoni.addEventListener('input', function(e) {
+                    const query = e.target.value.toLowerCase();
+                    const filtered = allCanzoni.filter(c => 
+                        (c.Titolo && c.Titolo.toLowerCase().includes(query)) ||
+                        (c['Tonalità'] && c['Tonalità'].toLowerCase().includes(query))
+                    );
+                    renderCanzoni(filtered);
+                });
+            }
+        });
 
         let allEvents = []; // Variabile globale per la ricerca
 
