@@ -508,8 +508,8 @@
             
             const keyMatch = songString.match(/\((.*?)\)/);
             if (keyMatch && songData.Tonalità) {
-                const requestedKey = keyMatch[1].trim().toLowerCase();
-                const availableKeys = songData.Tonalità.split(/[\/|\-,]/).map(k => k.trim().toLowerCase());
+                const requestedKey = keyMatch[1].replace(/\s+/g, '').toLowerCase();
+                const availableKeys = songData.Tonalità.split(/[\/|\-,]/).map(k => k.replace(/\s+/g, '').toLowerCase());
                 const keyIndex = availableKeys.indexOf(requestedKey);
                 if (keyIndex !== -1 && urls[keyIndex]) {
                     targetUrl = urls[keyIndex].trim();
