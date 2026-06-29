@@ -627,27 +627,38 @@
                     formationBlock = `<div class="border-t border-b border-[#333333] py-3 mt-4"><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-2">Formazione</p><div class="flex flex-wrap gap-2">${chips}</div></div>`;
                 }
                 
-                let songsBlock = '';
-                if (event['Scaletta Canzoni']) {
-                    const separator = event['Scaletta Canzoni'].includes('|') ? '|' : ',';
-                    const songs = event['Scaletta Canzoni'].split(separator).filter(s => s.trim() !== '');
-                    
-                    songsBlock = `<div class="mt-4"><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-2">Scaletta</p><ul class="space-y-2 text-sm">${songs.map((s, i) => {
-                        const songClean = s.trim();
-                        const ytLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(songClean)}`;
-                        const songData = getSongLinks(songClean);
+                    let eventPlaylist = [];
+                    let encodedPlaylist = '';
+                    if (event['Scaletta Canzoni']) {
+                        const separator = event['Scaletta Canzoni'].includes('|') ? '|' : ',';
+                        const songs = event['Scaletta Canzoni'].split(separator).filter(s => s.trim() !== '');
                         
-                        let fileButtons = '';
-                        if (songData && songData['Link Accordi']) {
-                            const urls = songData['Link Accordi'].split('|');
-                            const safeUrl = urls[0].trim().replace(/'/g, "\\'");
-                            const safeTitle = (songData.Titolo || songClean).replace(/'/g, "\\'");
-                            fileButtons = `<button onclick="openPdfModal('${safeUrl}', '${safeTitle} - Accordi')" class="text-emerald-400 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center justify-center shrink-0" title="Apri Accordi">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
-                            </button>`;
-                        }
+                        // Costruisci playlist
+                        songs.forEach(s => {
+                            const songData = getSongLinks(s.trim());
+                            if (songData && songData['Link Accordi']) {
+                                const url = songData['Link Accordi'].split('|')[0].trim().replace(/'/g, "\\'");
+                                const title = (songData.Titolo || s.trim()).replace(/'/g, "\\'");
+                                eventPlaylist.push({ url: url, title: title + ' - Accordi' });
+                            }
+                        });
+                        if (eventPlaylist.length > 0) encodedPlaylist = encodeURIComponent(JSON.stringify(eventPlaylist)).replace(/'/g, "\\'");
+                        
+                        let pdfIndexCounter = 0;
+                        songsBlock = `<div class="mt-4"><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-2">Scaletta</p><ul class="space-y-2 text-sm">${songs.map((s, i) => {
+                            const songClean = s.trim();
+                            const ytLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(songClean)}`;
+                            const songData = getSongLinks(songClean);
+                            
+                            let fileButtons = '';
+                            if (songData && songData['Link Accordi']) {
+                                const myPdfIndex = pdfIndexCounter++;
+                                fileButtons = `<button onclick="openPdfModal('${encodedPlaylist}', ${myPdfIndex})" class="text-emerald-400 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center justify-center shrink-0" title="Apri Accordi">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+                                </button>`;
+                            }
 
-                        return `
+                            return `
                         <li class="bg-white/[0.03] px-3 py-2.5 rounded-xl border border-white/[0.05] flex justify-between items-center gap-2">
                             <div class="flex gap-2 items-center min-w-0">
                                 <span class="text-[#aaaaaa] font-bold shrink-0">${i + 1}.</span> 
@@ -726,13 +737,27 @@
                 const pastIndex = events.indexOf(event);
                 const staggerClass = pastIndex < 3 ? `stagger-${pastIndex + 1}` : '';
                 
-                let songsBlock = '';
+                let eventPlaylist = [];
+                let encodedPlaylist = '';
                 let hasSongs = false;
                 if (event['Scaletta Canzoni']) {
                     const separator = event['Scaletta Canzoni'].includes('|') ? '|' : ',';
                     const songs = event['Scaletta Canzoni'].split(separator).filter(s => s.trim() !== '');
                     if (songs.length > 0) {
                         hasSongs = true;
+                        
+                        // Costruisci playlist
+                        songs.forEach(s => {
+                            const songData = getSongLinks(s.trim());
+                            if (songData && songData['Link Accordi']) {
+                                const url = songData['Link Accordi'].split('|')[0].trim().replace(/'/g, "\\'");
+                                const title = (songData.Titolo || s.trim()).replace(/'/g, "\\'");
+                                eventPlaylist.push({ url: url, title: title + ' - Accordi' });
+                            }
+                        });
+                        if (eventPlaylist.length > 0) encodedPlaylist = encodeURIComponent(JSON.stringify(eventPlaylist)).replace(/'/g, "\\'");
+                        
+                        let pdfIndexCounter = 0;
                         songsBlock = `<div class="mt-3 pt-3 border-t border-white/[0.05]"><p class="text-[10px] text-[#888888] uppercase font-bold tracking-wider mb-2">Scaletta</p><ul class="space-y-1.5 text-xs text-[#cccccc]">${songs.map((s, i) => {
                             const songClean = s.trim();
                             const ytLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(songClean)}`;
@@ -740,10 +765,8 @@
                             
                             let fileButtons = '';
                             if (songData && songData['Link Accordi']) {
-                                const urls = songData['Link Accordi'].split('|');
-                                const safeUrl = urls[0].trim().replace(/'/g, "\\'");
-                                const safeTitle = (songData.Titolo || songClean).replace(/'/g, "\\'");
-                                fileButtons = `<button onclick="openPdfModal('${safeUrl}', '${safeTitle} - Accordi')" class="text-emerald-400 p-1.5 rounded hover:bg-emerald-500/20 transition-colors flex items-center justify-center shrink-0" title="Apri Accordi">
+                                const myPdfIndex = pdfIndexCounter++;
+                                fileButtons = `<button onclick="openPdfModal('${encodedPlaylist}', ${myPdfIndex})" class="text-emerald-400 p-1.5 rounded hover:bg-emerald-500/20 transition-colors flex items-center justify-center shrink-0" title="Apri Accordi">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
                                 </button>`;
                             }
@@ -820,23 +843,110 @@
             }
         }
 
-        function openPdfModal(url, title) {
+        let currentPlaylist = [];
+        let currentPdfIndex = 0;
+
+        function openPdfModal(playlistDataStr, index) {
+            try {
+                let decodedStr = playlistDataStr;
+                if (playlistDataStr.startsWith('%5B')) {
+                    decodedStr = decodeURIComponent(playlistDataStr);
+                }
+
+                if (decodedStr.startsWith('[')) {
+                    currentPlaylist = JSON.parse(decodedStr);
+                    currentPdfIndex = index;
+                } else {
+                    // Backward compatibility (e.g. from Canzoni list)
+                    currentPlaylist = [{url: playlistDataStr, title: index}]; 
+                    currentPdfIndex = 0;
+                }
+            } catch (e) {
+                console.error("Error parsing playlist", e);
+                return;
+            }
+            
             const modal = document.getElementById('pdf-modal');
-            const iframe = document.getElementById('pdf-iframe');
-            document.getElementById('pdf-modal-title').innerText = title;
-            // Prevent scrolling on body
             document.body.style.overflow = 'hidden';
-            iframe.src = url;
+            
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes");
+            
+            renderCurrentPdf();
             modal.classList.remove('hidden');
+        }
+
+        function renderCurrentPdf() {
+            if (!currentPlaylist[currentPdfIndex]) return;
+            const song = currentPlaylist[currentPdfIndex];
+            const iframe = document.getElementById('pdf-iframe');
+            document.getElementById('pdf-modal-title').innerText = song.title;
+            iframe.src = song.url;
+            
+            const footer = document.getElementById('pdf-modal-footer');
+            if (currentPlaylist.length > 1) {
+                footer.classList.remove('hidden');
+                footer.classList.add('flex');
+                
+                const prevBtn = document.getElementById('pdf-prev-btn');
+                const nextBtn = document.getElementById('pdf-next-btn');
+                const dots = document.getElementById('pdf-dots');
+                
+                if (currentPdfIndex > 0) prevBtn.classList.remove('opacity-30', 'pointer-events-none');
+                else prevBtn.classList.add('opacity-30', 'pointer-events-none');
+                
+                if (currentPdfIndex < currentPlaylist.length - 1) nextBtn.classList.remove('opacity-30', 'pointer-events-none');
+                else nextBtn.classList.add('opacity-30', 'pointer-events-none');
+                
+                dots.innerHTML = currentPlaylist.map((_, i) => `<div class="w-2 h-2 rounded-full transition-colors ${i === currentPdfIndex ? 'bg-[#e53e3e]' : 'bg-[#555555]'}"></div>`).join('');
+            } else {
+                footer.classList.add('hidden');
+                footer.classList.remove('flex');
+            }
+        }
+
+        function nextPdf() {
+            if (currentPdfIndex < currentPlaylist.length - 1) {
+                currentPdfIndex++;
+                renderCurrentPdf();
+            }
+        }
+
+        function prevPdf() {
+            if (currentPdfIndex > 0) {
+                currentPdfIndex--;
+                renderCurrentPdf();
+            }
         }
 
         function closePdfModal() {
             const modal = document.getElementById('pdf-modal');
             const iframe = document.getElementById('pdf-iframe');
             document.body.style.overflow = '';
+            
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
+            
             modal.classList.add('hidden');
             iframe.src = '';
         }
+        
+        let touchstartX = 0;
+        let touchendX = 0;
+        function handlePdfSwipe() {
+            if (currentPlaylist.length <= 1) return;
+            if (touchendX < touchstartX - 50) nextPdf();
+            if (touchendX > touchstartX + 50) prevPdf();
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const header = document.getElementById('pdf-modal-header');
+            const footer = document.getElementById('pdf-modal-footer');
+            [header, footer].forEach(el => {
+                if(!el) return;
+                el.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, {passive: true});
+                el.addEventListener('touchend', e => { touchendX = e.changedTouches[0].screenX; handlePdfSwipe(); }, {passive: true});
+            });
+        });
 
         fetchCalendarData();
         fetchCanzoniData();
@@ -850,14 +960,23 @@
 
     <!-- Modal per i PDF -->
     <div id="pdf-modal" class="fixed inset-0 z-[100] hidden bg-black flex flex-col">
-        <div class="flex items-center justify-between bg-[#111111] p-4 border-b border-[#333333]">
-            <h3 id="pdf-modal-title" class="text-white font-bold text-lg truncate flex-1 pr-4">Testo</h3>
+        <div id="pdf-modal-header" class="flex items-center justify-between bg-[#111111] p-4 border-b border-[#333333] touch-pan-y">
+            <h3 id="pdf-modal-title" class="text-white font-bold text-lg truncate flex-1 pr-4 select-none">Testo</h3>
             <button onclick="closePdfModal()" class="text-gray-400 p-2 rounded-full hover:bg-white/10 shrink-0 border border-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <div class="flex-1 w-full bg-[#111111] overflow-hidden">
+        <div class="flex-1 w-full bg-[#111111] overflow-hidden relative">
             <iframe id="pdf-iframe" class="w-full h-full border-0 bg-white" src="" allow="autoplay"></iframe>
+        </div>
+        <div id="pdf-modal-footer" class="hidden items-center justify-between bg-[#111111] p-3 border-t border-[#333333] touch-pan-y">
+            <button id="pdf-prev-btn" onclick="prevPdf()" class="bg-[#222222] text-white px-4 py-2 rounded-lg font-bold flex gap-2 items-center active:bg-[#333333]">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div id="pdf-dots" class="flex gap-2"></div>
+            <button id="pdf-next-btn" onclick="nextPdf()" class="bg-[#e53e3e] text-white px-4 py-2 rounded-lg font-bold flex gap-2 items-center active:bg-[#c53030]">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
         </div>
     </div>
 </body>
