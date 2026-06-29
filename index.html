@@ -246,6 +246,8 @@
         let allCanzoni = [];
 
         function switchView(viewName) {
+            sessionStorage.setItem('lodeAppCurrentView', viewName);
+            
             const calView = document.getElementById('view-calendario');
             const manView = document.getElementById('view-mansioni');
             const canView = document.getElementById('view-canzoni');
@@ -722,6 +724,12 @@
         }
 
         fetchCalendarData();
+        
+        // Restore view from session storage if exists
+        const savedView = sessionStorage.getItem('lodeAppCurrentView');
+        if (savedView && savedView !== 'calendario') {
+            switchView(savedView);
+        }
     </script>
 </body>
 </html>
