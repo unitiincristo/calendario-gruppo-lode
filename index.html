@@ -306,6 +306,8 @@
                 });
             } catch (error) {
                 console.error("Errore fetch mansioni", error);
+                const container = document.getElementById('mansioni-container');
+                if (container) container.innerHTML = '<div class="text-red-400 text-center p-6 bg-red-500/10 rounded-xl border border-red-500/30">Errore di connessione a Google Sheets. Impossibile scaricare le mansioni. Riprova più tardi.</div>';
             }
         }
 
@@ -380,6 +382,8 @@
                 });
             } catch (error) {
                 console.error("Errore fetch canzoni", error);
+                const container = document.getElementById('canzoni-container');
+                if (container) container.innerHTML = '<div class="text-red-400 text-center p-6 bg-red-500/10 rounded-xl border border-red-500/30">Errore di connessione a Google Sheets. Impossibile scaricare le canzoni. Riprova più tardi.</div>';
             }
         }
 
