@@ -674,7 +674,13 @@
                     }).join('')}</ul></div>`;
                 }
 
-                let notesBlock = event['Note e Prove'] ? `<div class="bg-white/[0.03] border border-white/[0.05] rounded-xl p-3 text-[13px] text-[#aaaaaa] mt-4 font-light tracking-wide">📌 ${event['Note e Prove']}</div>` : '';
+                let notesBlock = '';
+                if (event['Note e Prove']) {
+                    const notes = event['Note e Prove'].split(',').filter(n => n.trim() !== '');
+                    notesBlock = `<div class="mt-4 flex flex-col gap-2">` + 
+                        notes.map(n => `<div class="bg-white/[0.03] border border-white/[0.05] rounded-xl p-3 text-[13px] text-[#aaaaaa] font-light tracking-wide">📌 ${n.trim()}</div>`).join('') +
+                        `</div>`;
+                }
 
                 let calendarTitle = event['Titolo Calendario'] || event['Tipo Evento'] || 'Evento Lode';
                 
