@@ -22,6 +22,23 @@
         .stagger-1 { animation-delay: 0.1s; }
         .stagger-2 { animation-delay: 0.2s; }
         .stagger-3 { animation-delay: 0.3s; }
+
+        /* Smooth Accordion */
+        .accordion-grid {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.3s ease-in-out, opacity 0.3s ease-in-out, margin 0.3s ease-in-out;
+            opacity: 0;
+            margin-top: 0;
+        }
+        .accordion-grid.expanded {
+            grid-template-rows: 1fr;
+            opacity: 1;
+            margin-top: 1rem;
+        }
+        .accordion-content {
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-[#111111] text-[#ffffff] min-h-screen font-sans antialiased tracking-wide overflow-x-hidden">
@@ -356,10 +373,12 @@
                                 <svg id="mansione-caret-${index}" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                         </div>
-                        <div id="mansione-tasks-${index}" class="hidden mt-4 pt-4 border-t border-white/[0.05]">
-                            <ul class="m-0 p-0 list-none">
-                                ${tasks || '<li class="text-[#666666] text-sm">Nessuna mansione assegnata.</li>'}
-                            </ul>
+                        <div id="mansione-tasks-${index}" class="accordion-grid border-t-0 border-white/[0.05]">
+                            <div class="accordion-content">
+                                <ul class="m-0 p-0 pt-4 list-none">
+                                    ${tasks || '<li class="text-[#666666] text-sm">Nessuna mansione assegnata.</li>'}
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -413,10 +432,12 @@
                     const urls = url.split('|');
                     return urls.map((u, i) => {
                         const lbl = urls.length > 1 ? `${label} ${i+1}` : label;
-                        return `<a href="${u.trim()}" target="_blank" class="flex items-center gap-2 bg-${color}-500/10 hover:bg-${color}-500/20 text-${color}-400 border border-${color}-500/30 px-3 py-2 rounded-xl text-xs font-bold transition-colors">
+                        const safeUrl = u.trim().replace(/'/g, "\\'");
+                        const safeTitle = c.Titolo.replace(/'/g, "\\'");
+                        return `<button onclick="openPdfModal('${safeUrl}', '${safeTitle} - ${lbl}')" class="flex items-center gap-2 bg-${color}-500/10 hover:bg-${color}-500/20 text-${color}-400 border border-${color}-500/30 px-3 py-2 rounded-xl text-xs font-bold transition-colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${icon}</svg>
                             ${lbl}
-                        </a>`;
+                        </button>`;
                     }).join('');
                 };
 
@@ -619,9 +640,11 @@
                         let fileButtons = '';
                         if (songData && songData['Link Accordi']) {
                             const urls = songData['Link Accordi'].split('|');
-                            fileButtons = `<a href="${urls[0].trim()}" target="_blank" class="text-emerald-400 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center justify-center shrink-0" title="Apri Accordi">
+                            const safeUrl = urls[0].trim().replace(/'/g, "\\'");
+                            const safeTitle = (songData.Titolo || songClean).replace(/'/g, "\\'");
+                            fileButtons = `<button onclick="openPdfModal('${safeUrl}', '${safeTitle} - Accordi')" class="text-emerald-400 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center justify-center shrink-0" title="Apri Accordi">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
-                            </a>`;
+                            </button>`;
                         }
 
                         return `
@@ -710,14 +733,29 @@
                     const songs = event['Scaletta Canzoni'].split(separator).filter(s => s.trim() !== '');
                     if (songs.length > 0) {
                         hasSongs = true;
-                        songsBlock = `<div id="past-songs-${index}" class="hidden mt-3 pt-3 border-t border-white/[0.05]"><p class="text-[10px] text-[#888888] uppercase font-bold tracking-wider mb-2">Scaletta</p><ul class="space-y-1.5 text-xs text-[#cccccc]">${songs.map((s, i) => {
+                        songsBlock = `<div class="mt-3 pt-3 border-t border-white/[0.05]"><p class="text-[10px] text-[#888888] uppercase font-bold tracking-wider mb-2">Scaletta</p><ul class="space-y-1.5 text-xs text-[#cccccc]">${songs.map((s, i) => {
                             const songClean = s.trim();
                             const ytLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(songClean)}`;
-                            return `<li class="flex justify-between items-center bg-white/[0.02] px-2 py-1.5 rounded-lg border border-white/[0.02]">
-                                <span><span class="text-[#888888]">${i + 1}.</span> ${songClean}</span>
-                                <a href="${ytLink}" target="_blank" class="text-[#ff4444] p-1.5 rounded hover:bg-[#ff4444]/20 transition-colors" title="Cerca su YouTube">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.377.55a3.016 3.016 0 0 0-2.122 2.136C.005 8.08.005 12 .005 12s0 3.92.496 5.814a3.016 3.016 0 0 0 2.122 2.136c1.872.55 9.377.55 9.377.55s7.505 0 9.377-.55a3.016 3.016 0 0 0 2.122-2.136C24 15.92 24 12 24 12s0-3.92-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                                </a>
+                            const songData = getSongLinks(songClean);
+                            
+                            let fileButtons = '';
+                            if (songData && songData['Link Accordi']) {
+                                const urls = songData['Link Accordi'].split('|');
+                                const safeUrl = urls[0].trim().replace(/'/g, "\\'");
+                                const safeTitle = (songData.Titolo || songClean).replace(/'/g, "\\'");
+                                fileButtons = `<button onclick="openPdfModal('${safeUrl}', '${safeTitle} - Accordi')" class="text-emerald-400 p-1.5 rounded hover:bg-emerald-500/20 transition-colors flex items-center justify-center shrink-0" title="Apri Accordi">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+                                </button>`;
+                            }
+
+                            return `<li class="flex justify-between items-center bg-white/[0.02] px-2 py-1.5 rounded-lg border border-white/[0.02] gap-2">
+                                <span class="min-w-0 truncate"><span class="text-[#888888]">${i + 1}.</span> ${songClean}</span>
+                                <div class="flex gap-1 shrink-0">
+                                    ${fileButtons}
+                                    <a href="${ytLink}" target="_blank" class="text-[#ff4444] p-1.5 rounded hover:bg-[#ff4444]/20 transition-colors flex items-center justify-center shrink-0" title="Cerca su YouTube">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.377.55a3.016 3.016 0 0 0-2.122 2.136C.005 8.08.005 12 .005 12s0 3.92.496 5.814a3.016 3.016 0 0 0 2.122 2.136c1.872.55 9.377.55 9.377.55s7.505 0 9.377-.55a3.016 3.016 0 0 0 2.122-2.136C24 15.92 24 12 24 12s0-3.92-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                    </a>
+                                </div>
                             </li>`;
                         }).join('')}</ul></div>`;
                     }
@@ -742,7 +780,11 @@
                             ${caretIcon}
                         </div>
                     </div>
-                    ${songsBlock}
+                    <div id="past-songs-${index}" class="accordion-grid">
+                        <div class="accordion-content">
+                            ${songsBlock}
+                        </div>
+                    </div>
                 </div>`;
             });
             container.innerHTML = htmlContent || `<p class="text-center text-[#888888] font-light py-4 text-sm">Nessun evento passato.</p>`;
@@ -752,12 +794,12 @@
             const songsDiv = document.getElementById(`past-songs-${id}`);
             const caret = document.getElementById(`past-caret-${id}`);
             if(songsDiv && caret) {
-                if(songsDiv.classList.contains('hidden')) {
-                    songsDiv.classList.remove('hidden');
-                    caret.classList.add('rotate-180');
-                } else {
-                    songsDiv.classList.add('hidden');
+                if(songsDiv.classList.contains('expanded')) {
+                    songsDiv.classList.remove('expanded');
                     caret.classList.remove('rotate-180');
+                } else {
+                    songsDiv.classList.add('expanded');
+                    caret.classList.add('rotate-180');
                 }
             }
         }
@@ -766,14 +808,34 @@
             const tasksDiv = document.getElementById(`mansione-tasks-${id}`);
             const caret = document.getElementById(`mansione-caret-${id}`);
             if(tasksDiv && caret) {
-                if(tasksDiv.classList.contains('hidden')) {
-                    tasksDiv.classList.remove('hidden');
-                    caret.classList.add('rotate-180');
-                } else {
-                    tasksDiv.classList.add('hidden');
+                if(tasksDiv.classList.contains('expanded')) {
+                    tasksDiv.classList.remove('expanded');
+                    tasksDiv.classList.remove('border-t');
                     caret.classList.remove('rotate-180');
+                } else {
+                    tasksDiv.classList.add('expanded');
+                    tasksDiv.classList.add('border-t');
+                    caret.classList.add('rotate-180');
                 }
             }
+        }
+
+        function openPdfModal(url, title) {
+            const modal = document.getElementById('pdf-modal');
+            const iframe = document.getElementById('pdf-iframe');
+            document.getElementById('pdf-modal-title').innerText = title;
+            // Prevent scrolling on body
+            document.body.style.overflow = 'hidden';
+            iframe.src = url;
+            modal.classList.remove('hidden');
+        }
+
+        function closePdfModal() {
+            const modal = document.getElementById('pdf-modal');
+            const iframe = document.getElementById('pdf-iframe');
+            document.body.style.overflow = '';
+            modal.classList.add('hidden');
+            iframe.src = '';
         }
 
         fetchCalendarData();
@@ -785,5 +847,18 @@
             switchView(savedView);
         }
     </script>
+
+    <!-- Modal per i PDF -->
+    <div id="pdf-modal" class="fixed inset-0 z-[100] hidden bg-black flex flex-col">
+        <div class="flex items-center justify-between bg-[#111111] p-4 border-b border-[#333333]">
+            <h3 id="pdf-modal-title" class="text-white font-bold text-lg truncate flex-1 pr-4">Testo</h3>
+            <button onclick="closePdfModal()" class="text-gray-400 p-2 rounded-full hover:bg-white/10 shrink-0 border border-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="flex-1 w-full bg-[#111111] overflow-hidden">
+            <iframe id="pdf-iframe" class="w-full h-full border-0 bg-white" src="" allow="autoplay"></iframe>
+        </div>
+    </div>
 </body>
 </html>
