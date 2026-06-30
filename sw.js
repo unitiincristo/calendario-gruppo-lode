@@ -1,10 +1,12 @@
-const CACHE_NAME = 'lode-app-v31';
+const CACHE_NAME = 'lode-app-v35';
 const STATIC_ASSETS = [
     './',
     './index.html',
-    './icon.png',
     './manifest.json',
-    'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4',
+    './icon.png',
+    './pdfjs/pdf.min.js',
+    './pdfjs/pdf.worker.min.js',
+    'https://cdn.tailwindcss.com',
     'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js'
 ];
 

@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Calendario Gruppo Lode</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#111111">
@@ -10,6 +10,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
@@ -530,8 +531,8 @@
 
         function resolveSongPdfUrl(songString, songData) {
             if (!songData || !songData['Link Accordi']) return null;
-            const urls = songData['Link Accordi'].split('|');
-            let targetUrl = urls[0].trim();
+            
+            const safeTitle = (songData.Titolo || '').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ /g, '_');
             
             let requestedKey = null;
 
@@ -546,16 +547,19 @@
                 }
             }
 
+            let keyToUse = songData.Tonalità ? songData.Tonalità.split('|')[0].trim() : '';
+
             // Se abbiamo una tonalità richiesta, cerchiamola tra quelle disponibili
             if (requestedKey && songData.Tonalità) {
-                const availableKeys = songData.Tonalità.split(/[\/|\-,]/).map(k => k.replace(/\s+/g, '').toLowerCase());
-                const keyIndex = availableKeys.indexOf(requestedKey);
-                if (keyIndex !== -1 && urls[keyIndex]) {
-                    targetUrl = urls[keyIndex].trim();
+                const availableKeys = songData.Tonalità.split(/[\/|\-,]/).map(k => k.trim());
+                const matchingKey = availableKeys.find(k => k.replace(/\s+/g, '').toLowerCase() === requestedKey);
+                if (matchingKey) {
+                    keyToUse = matchingKey;
                 }
             }
-
-            return targetUrl;
+            
+            const safeKey = keyToUse.replace(/[^a-zA-Z0-9#]/g, '');
+            return './pdf-accordi/' + safeTitle + '_' + safeKey + '.pdf';
         }
 
         document.getElementById('search-input').addEventListener('input', function(e) {
@@ -985,8 +989,6 @@
             const viewport = document.querySelector('meta[name="viewport"]');
             if (viewport) viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes");
             
-            document.getElementById('pdf-iframe').style.width = '100%';
-            
             renderCurrentPdf();
             modal.classList.remove('hidden');
             
@@ -1029,13 +1031,59 @@
             nextBtn.style.transform = `translate(${leftNext}px, ${top}px) translate(0, -50%) scale(${inverseScale})`;
         }
 
-        function renderCurrentPdf() {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs/pdf.worker.min.js';
+        let pdfDoc = null;
+
+        async function renderCurrentPdf() {
             if (!currentPlaylist[currentPdfIndex]) return;
             const song = currentPlaylist[currentPdfIndex];
-            const iframe = document.getElementById('pdf-iframe');
-            document.getElementById('pdf-modal-title').innerText = song.title;
-            iframe.src = song.url;
             
+            document.getElementById('pdf-modal-title').innerText = song.title;
+            const loader = document.getElementById('pdf-loader');
+            const container = document.getElementById('pdf-container');
+            
+            loader.classList.remove('hidden');
+            Array.from(container.querySelectorAll('canvas')).forEach(c => c.remove());
+            
+            try {
+                const pdfUrl = song.url;
+                pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+                
+                const containerWidth = container.clientWidth;
+                const outputScale = window.devicePixelRatio || 1;
+                
+                for (let i = 1; i <= pdfDoc.numPages; i++) {
+                    const page = await pdfDoc.getPage(i);
+                    const unscaledViewport = page.getViewport({scale: 1});
+                    const scale = containerWidth / unscaledViewport.width;
+                    const viewport = page.getViewport({scale: scale});
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.className = 'w-full shadow-md mb-2 bg-white';
+                    const context = canvas.getContext('2d');
+                    
+                    canvas.width = Math.floor(viewport.width * outputScale);
+                    canvas.height = Math.floor(viewport.height * outputScale);
+                    canvas.style.width = Math.floor(viewport.width) + "px";
+                    canvas.style.height =  Math.floor(viewport.height) + "px";
+                    
+                    const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+                    
+                    container.appendChild(canvas);
+                    
+                    await page.render({
+                        canvasContext: context,
+                        transform: transform,
+                        viewport: viewport
+                    }).promise;
+                }
+            } catch (err) {
+                console.error("Errore PDF:", err);
+                container.innerHTML += '<div class="text-black p-4 text-center mt-10">File PDF non trovato in locale.<br>Hai scaricato i file correttamente?</div>';
+            } finally {
+                loader.classList.add('hidden');
+            }
+
             const footer = document.getElementById('pdf-modal-footer');
             if (currentPlaylist.length > 1) {
                 footer.classList.remove('hidden');
@@ -1056,6 +1104,7 @@
                 footer.classList.add('hidden');
                 footer.classList.remove('flex');
             }
+            if (window.visualViewport) updateFloatingButtons();
         }
 
         function nextPdf() {
@@ -1074,7 +1123,6 @@
 
         function closePdfModal() {
             const modal = document.getElementById('pdf-modal');
-            const iframe = document.getElementById('pdf-iframe');
             document.body.style.overflow = '';
             
             const viewport = document.querySelector('meta[name="viewport"]');
@@ -1086,8 +1134,8 @@
             }
             
             modal.classList.add('hidden');
-            iframe.src = '';
-            iframe.style.width = '100%';
+            const container = document.getElementById('pdf-container');
+            Array.from(container.querySelectorAll('canvas')).forEach(c => c.remove());
         }
         
         let touchstartX = 0;
@@ -1122,16 +1170,15 @@
         <div id="pdf-modal-header" class="flex items-center justify-between bg-[#111111] p-4 border-b border-[#333333] touch-pan-y">
             <h3 id="pdf-modal-title" class="text-white font-bold text-lg truncate flex-1 pr-2 select-none">Testo</h3>
             <div class="flex items-center gap-2">
-                <button onclick="document.getElementById('pdf-iframe').src = document.getElementById('pdf-iframe').src" class="text-gray-400 p-2 rounded-full hover:bg-white/10 shrink-0 border border-gray-600 bg-black/20" title="Ricarica / Sblocca PDF">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                </button>
                 <button onclick="closePdfModal()" class="text-gray-400 p-2 rounded-full hover:bg-white/10 shrink-0 border border-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
         </div>
-        <div class="flex-1 w-full bg-[#111111] overflow-auto relative touch-pan-x touch-pan-y" id="pdf-container">
-            <iframe id="pdf-iframe" class="w-full h-full border-0 bg-white" src="" allow="autoplay"></iframe>
+        <div class="flex-1 w-full bg-[#111111] overflow-auto relative touch-pan-x touch-pan-y bg-white" id="pdf-container">
+            <div id="pdf-loader" class="flex items-center justify-center py-10 hidden w-full h-full absolute top-0 left-0 bg-white/80 z-10">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+            </div>
         </div>
         <div id="pdf-modal-footer" class="hidden items-center justify-between bg-[#111111] p-3 border-t border-[#333333] touch-pan-y">
             <button id="pdf-prev-btn" onclick="prevPdf()" class="bg-[#222222] text-white px-4 py-2 rounded-lg font-bold flex gap-2 items-center active:bg-[#333333]">
@@ -1144,6 +1191,12 @@
         </div>
 
         <!-- Frecce di navigazione PDF (fisse al visualViewport) -->
+        <button id="floating-prev" onclick="prevPdf()" class="fixed z-[200] bg-[#222222]/90 text-white w-12 h-12 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.5)] border border-[#444444] flex items-center justify-center backdrop-blur-sm transition-all active:scale-95 hidden" style="transform-origin: center;">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <button id="floating-next" onclick="nextPdf()" class="fixed z-[200] bg-[#e53e3e]/90 text-white w-12 h-12 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.5)] border border-[#ff6b6b] flex items-center justify-center backdrop-blur-sm transition-all active:scale-95 hidden" style="transform-origin: center;">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
         <div id="floating-prev" onclick="prevPdf()" class="absolute left-0 top-0 z-[200] w-12 h-12 bg-[#222]/80 border border-white/10 text-white rounded-full items-center justify-center backdrop-blur shadow-[0_0_15px_rgba(0,0,0,0.5)] transition-opacity duration-300 opacity-0 pointer-events-none origin-center" style="display: none;">
             <svg class="w-6 h-6 pr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
         </div>
