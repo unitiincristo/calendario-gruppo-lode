@@ -47,7 +47,18 @@
     <aside id="sidebar" class="fixed top-0 left-0 w-4/5 max-w-sm h-full bg-[#1a1a1a] border-r border-white/[0.05] z-50 transform -translate-x-full transition-transform duration-300 ease-in-out shadow-[4px_0_15px_rgba(0,0,0,0.8)] flex flex-col">
         <div class="p-5 border-b border-white/[0.05] flex justify-between items-center">
             <h2 class="text-lg font-bold text-[#aaaaaa]">Menu</h2>
-            <button onclick="toggleSidebar()" class="text-[#888888] text-2xl font-bold p-2">&times;</button>
+            <button onclick="toggleSidebar()" class="text-[#888888] text-2xl font-bold p-2 hover:text-white transition-colors">&times;</button>
+        </div>
+        <div class="p-4 border-b border-white/[0.05]">
+            <label class="block text-[11px] font-bold text-[#888888] uppercase tracking-wider mb-2">Il tuo Profilo</label>
+            <select id="user-profile-select" onchange="saveProfile(this.value)" class="w-full bg-[#222222] border border-[#444444] text-[#ffffff] text-sm rounded-lg focus:ring-[#666666] focus:border-[#666666] block p-2.5 transition-colors outline-none cursor-pointer">
+                <option value="">Standard (Tutti)</option>
+                <option value="Daniele">Daniele</option>
+                <option value="Adrian">Adrian</option>
+                <option value="Giona">Giona</option>
+                <option value="Gianni">Gianni</option>
+            </select>
+            <p class="text-[10px] text-[#666666] mt-2 leading-tight">Seleziona il tuo nome per caricare in automatico gli accordi e le tonalità personalizzate.</p>
         </div>
         <div class="p-4 border-b border-white/[0.05] space-y-2">
             <button onclick="switchView('calendario', true)" id="nav-calendario" class="w-full text-left bg-white/[0.05] text-white p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
@@ -261,6 +272,22 @@
 
         let allMansioni = [];
         let allCanzoni = [];
+        let currentProfile = localStorage.getItem('lode-user-profile') || '';
+
+        function saveProfile(val) {
+            currentProfile = val;
+            localStorage.setItem('lode-user-profile', val);
+            if (typeof allEvents !== 'undefined' && allEvents.length > 0) {
+                processEvents(allEvents, false);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if(currentProfile) {
+                const sel = document.getElementById('user-profile-select');
+                if(sel) sel.value = currentProfile;
+            }
+        });
 
         function switchView(viewName, fromNav = false) {
             sessionStorage.setItem('lodeAppCurrentView', viewName);
@@ -506,15 +533,28 @@
             const urls = songData['Link Accordi'].split('|');
             let targetUrl = urls[0].trim();
             
-            const keyMatch = songString.match(/\((.*?)\)/);
-            if (keyMatch && songData.Tonalità) {
-                const requestedKey = keyMatch[1].replace(/\s+/g, '').toLowerCase();
+            let requestedKey = null;
+
+            // 1. Profilo: Se l'utente ha una colonna "Tonalità [Nome]" e c'è un valore
+            if (currentProfile && songData[`Tonalità ${currentProfile}`] && songData[`Tonalità ${currentProfile}`].trim() !== '') {
+                requestedKey = songData[`Tonalità ${currentProfile}`].replace(/\s+/g, '').toLowerCase();
+            } else {
+                // 2. Standard: Estrarre la tonalità dalla stringa del calendario "Nome Canzone (Tonalità)"
+                const keyMatch = songString.match(/\((.*?)\)/);
+                if (keyMatch) {
+                    requestedKey = keyMatch[1].replace(/\s+/g, '').toLowerCase();
+                }
+            }
+
+            // Se abbiamo una tonalità richiesta, cerchiamola tra quelle disponibili
+            if (requestedKey && songData.Tonalità) {
                 const availableKeys = songData.Tonalità.split(/[\/|\-,]/).map(k => k.replace(/\s+/g, '').toLowerCase());
                 const keyIndex = availableKeys.indexOf(requestedKey);
                 if (keyIndex !== -1 && urls[keyIndex]) {
                     targetUrl = urls[keyIndex].trim();
                 }
             }
+
             return targetUrl;
         }
 
@@ -680,10 +720,23 @@
                             let displayTitle = songClean;
                             let keyChip = '';
                             const keyMatch = songClean.match(/\((.*?)\)/);
+                            
+                            let baseKey = keyMatch ? keyMatch[1].trim() : null;
+                            let personalKey = null;
+
+                            if (currentProfile && songData && songData[`Tonalità ${currentProfile}`]) {
+                                const pKey = songData[`Tonalità ${currentProfile}`].trim();
+                                if (pKey !== '') personalKey = pKey;
+                            }
+
                             if (keyMatch) {
-                                const keyStr = keyMatch[1].trim();
                                 displayTitle = songClean.replace(/\(.*?\)/g, '').trim();
-                                keyChip = `<span class="bg-[#222222] text-[#cccccc] border border-[#444444] px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">${keyStr}</span>`;
+                            }
+
+                            if (personalKey) {
+                                keyChip = `<span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0" title="La tua tonalità">${personalKey}</span>`;
+                            } else if (baseKey) {
+                                keyChip = `<span class="bg-[#222222] text-[#cccccc] border border-[#444444] px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">${baseKey}</span>`;
                             }
 
                             return `
@@ -811,10 +864,23 @@
                             let displayTitle = songClean;
                             let keyChip = '';
                             const keyMatch = songClean.match(/\((.*?)\)/);
+                            
+                            let baseKey = keyMatch ? keyMatch[1].trim() : null;
+                            let personalKey = null;
+
+                            if (currentProfile && songData && songData[`Tonalità ${currentProfile}`]) {
+                                const pKey = songData[`Tonalità ${currentProfile}`].trim();
+                                if (pKey !== '') personalKey = pKey;
+                            }
+
                             if (keyMatch) {
-                                const keyStr = keyMatch[1].trim();
                                 displayTitle = songClean.replace(/\(.*?\)/g, '').trim();
-                                keyChip = `<span class="bg-[#222222] text-[#cccccc] border border-[#444444] px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">${keyStr}</span>`;
+                            }
+
+                            if (personalKey) {
+                                keyChip = `<span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0" title="La tua tonalità">${personalKey}</span>`;
+                            } else if (baseKey) {
+                                keyChip = `<span class="bg-[#222222] text-[#cccccc] border border-[#444444] px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">${baseKey}</span>`;
                             }
 
                             return `<li class="flex justify-between items-center bg-white/[0.02] px-2 py-1.5 rounded-lg border border-white/[0.02] gap-2">
@@ -921,6 +987,49 @@
             
             renderCurrentPdf();
             modal.classList.remove('hidden');
+            
+            if (window.visualViewport) {
+                updateFloatingButtons();
+                window.visualViewport.addEventListener('resize', updateFloatingButtons);
+                window.visualViewport.addEventListener('scroll', updateFloatingButtons);
+            }
+        }
+
+        function updateFloatingButtons() {
+            const vv = window.visualViewport;
+            const prevBtn = document.getElementById('floating-prev');
+            const nextBtn = document.getElementById('floating-next');
+            if(!prevBtn || !nextBtn || !vv) return;
+            
+            if (currentPlaylist.length <= 1) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                return;
+            }
+
+            const scale = vv.scale;
+            const inverseScale = 1 / scale;
+            
+            // Only show when zoomed in!
+            if (scale > 1.05) {
+                prevBtn.style.opacity = currentPdfIndex > 0 ? '1' : '0';
+                prevBtn.style.pointerEvents = currentPdfIndex > 0 ? 'auto' : 'none';
+                
+                nextBtn.style.opacity = currentPdfIndex < currentPlaylist.length - 1 ? '1' : '0';
+                nextBtn.style.pointerEvents = currentPdfIndex < currentPlaylist.length - 1 ? 'auto' : 'none';
+            } else {
+                prevBtn.style.opacity = '0';
+                prevBtn.style.pointerEvents = 'none';
+                nextBtn.style.opacity = '0';
+                nextBtn.style.pointerEvents = 'none';
+            }
+
+            prevBtn.style.display = 'flex';
+            nextBtn.style.display = 'flex';
+
+            const top = vv.pageTop + (vv.height / 2);
+            prevBtn.style.transform = `translate(${vv.pageLeft + 15}px, ${top}px) translate(0, -50%) scale(${inverseScale})`;
+            nextBtn.style.transform = `translate(${vv.pageLeft + vv.width - 15}px, ${top}px) translate(-100%, -50%) scale(${inverseScale})`;
         }
 
         function renderCurrentPdf() {
@@ -974,6 +1083,11 @@
             const viewport = document.querySelector('meta[name="viewport"]');
             if (viewport) viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
             
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', updateFloatingButtons);
+                window.visualViewport.removeEventListener('scroll', updateFloatingButtons);
+            }
+            
             modal.classList.add('hidden');
             iframe.src = '';
         }
@@ -1024,6 +1138,14 @@
             <button id="pdf-next-btn" onclick="nextPdf()" class="bg-[#e53e3e] text-white px-4 py-2 rounded-lg font-bold flex gap-2 items-center active:bg-[#c53030]">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
             </button>
+        </div>
+
+        <!-- Pulsanti fluttuanti per quando si fa lo zoom -->
+        <div id="floating-prev" onclick="prevPdf()" class="absolute left-0 top-0 z-[200] w-12 h-12 bg-[#222]/80 border border-white/10 text-white rounded-full items-center justify-center backdrop-blur shadow-[0_0_15px_rgba(0,0,0,0.5)] origin-center transition-opacity duration-300 opacity-0 pointer-events-none" style="display: none;">
+            <svg class="w-6 h-6 pr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+        </div>
+        <div id="floating-next" onclick="nextPdf()" class="absolute left-0 top-0 z-[200] w-12 h-12 bg-[#e53e3e]/80 border border-red-400/30 text-white rounded-full items-center justify-center backdrop-blur shadow-[0_0_15px_rgba(229,62,62,0.5)] origin-center transition-opacity duration-300 opacity-0 pointer-events-none" style="display: none;">
+            <svg class="w-6 h-6 pl-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
         </div>
     </div>
 </body>
