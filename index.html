@@ -1007,29 +1007,24 @@
                 return;
             }
 
-            const scale = vv.scale;
+            const scale = vv ? vv.scale : 1;
             const inverseScale = 1 / scale;
             
-            // Only show when zoomed in!
-            if (scale > 1.05) {
-                prevBtn.style.opacity = currentPdfIndex > 0 ? '1' : '0';
-                prevBtn.style.pointerEvents = currentPdfIndex > 0 ? 'auto' : 'none';
-                
-                nextBtn.style.opacity = currentPdfIndex < currentPlaylist.length - 1 ? '1' : '0';
-                nextBtn.style.pointerEvents = currentPdfIndex < currentPlaylist.length - 1 ? 'auto' : 'none';
-            } else {
-                prevBtn.style.opacity = '0';
-                prevBtn.style.pointerEvents = 'none';
-                nextBtn.style.opacity = '0';
-                nextBtn.style.pointerEvents = 'none';
-            }
+            // Show always if there is a next/prev song
+            prevBtn.style.opacity = currentPdfIndex > 0 ? '0.85' : '0';
+            prevBtn.style.pointerEvents = currentPdfIndex > 0 ? 'auto' : 'none';
+            
+            nextBtn.style.opacity = currentPdfIndex < currentPlaylist.length - 1 ? '0.85' : '0';
+            nextBtn.style.pointerEvents = currentPdfIndex < currentPlaylist.length - 1 ? 'auto' : 'none';
 
             prevBtn.style.display = 'flex';
             nextBtn.style.display = 'flex';
 
-            const top = vv.pageTop + (vv.height / 2);
-            prevBtn.style.transform = `translate(${vv.pageLeft + 15}px, ${top}px) translate(0, -50%) scale(${inverseScale})`;
-            nextBtn.style.transform = `translate(${vv.pageLeft + vv.width - 15}px, ${top}px) translate(-100%, -50%) scale(${inverseScale})`;
+            if (vv) {
+                const top = vv.pageTop + (vv.height / 2);
+                prevBtn.style.transform = `translate(${vv.pageLeft + 10}px, ${top}px) translate(0, -50%) scale(${inverseScale})`;
+                nextBtn.style.transform = `translate(${vv.pageLeft + vv.width - 10}px, ${top}px) translate(-100%, -50%) scale(${inverseScale})`;
+            }
         }
 
         function renderCurrentPdf() {
@@ -1122,10 +1117,15 @@
     <!-- Modal per i PDF -->
     <div id="pdf-modal" class="fixed inset-0 z-[100] hidden bg-black flex flex-col">
         <div id="pdf-modal-header" class="flex items-center justify-between bg-[#111111] p-4 border-b border-[#333333] touch-pan-y">
-            <h3 id="pdf-modal-title" class="text-white font-bold text-lg truncate flex-1 pr-4 select-none">Testo</h3>
-            <button onclick="closePdfModal()" class="text-gray-400 p-2 rounded-full hover:bg-white/10 shrink-0 border border-gray-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
+            <h3 id="pdf-modal-title" class="text-white font-bold text-lg truncate flex-1 pr-2 select-none">Testo</h3>
+            <div class="flex items-center gap-2">
+                <button onclick="document.getElementById('pdf-iframe').src = document.getElementById('pdf-iframe').src" class="text-gray-400 p-2 rounded-full hover:bg-white/10 shrink-0 border border-gray-600 bg-black/20" title="Ricarica / Sblocca PDF">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+                <button onclick="closePdfModal()" class="text-gray-400 p-2 rounded-full hover:bg-white/10 shrink-0 border border-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
         </div>
         <div class="flex-1 w-full bg-[#111111] overflow-hidden relative">
             <iframe id="pdf-iframe" class="w-full h-full border-0 bg-white" src="" allow="autoplay"></iframe>
