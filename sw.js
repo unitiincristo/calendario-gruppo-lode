@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lode-app-v38';
+const CACHE_NAME = 'lode-app-v39';
 const STATIC_ASSETS = [
     './',
     './index.html',
