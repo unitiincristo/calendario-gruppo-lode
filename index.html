@@ -974,7 +974,6 @@
                     currentPlaylist = JSON.parse(decodedStr);
                     currentPdfIndex = index;
                 } else {
-                    // Backward compatibility (e.g. from Canzoni list)
                     currentPlaylist = [{url: playlistDataStr, title: index}]; 
                     currentPdfIndex = 0;
                 }
@@ -983,14 +982,20 @@
                 return;
             }
             
-            const modal = document.getElementById('pdf-modal');
-            document.body.style.overflow = 'hidden';
-            
             const viewport = document.querySelector('meta[name="viewport"]');
             if (viewport) viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes");
             
+            // Nascondiamo l'intera app tranne il modale
+            document.querySelectorAll('header, main, aside, #sidebar-overlay').forEach(el => {
+                if (el.id !== 'pdf-modal') el.style.display = 'none';
+            });
+            
+            const modal = document.getElementById('pdf-modal');
+            modal.classList.remove('hidden', 'fixed', 'inset-0', 'z-[100]', 'flex', 'flex-col');
+            modal.classList.add('block', 'min-h-screen', 'bg-white');
+            document.body.style.overflow = 'auto'; // Lascia fare lo scroll nativo al body
+            
             renderCurrentPdf();
-            modal.classList.remove('hidden');
             
             if (window.visualViewport) {
                 updateFloatingButtons();
@@ -1123,7 +1128,8 @@
 
         function closePdfModal() {
             const modal = document.getElementById('pdf-modal');
-            document.body.style.overflow = '';
+            modal.classList.add('hidden', 'fixed', 'inset-0', 'z-[100]', 'flex', 'flex-col');
+            modal.classList.remove('block', 'min-h-screen', 'bg-white');
             
             const viewport = document.querySelector('meta[name="viewport"]');
             if (viewport) viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
@@ -1133,9 +1139,20 @@
                 window.visualViewport.removeEventListener('scroll', updateFloatingButtons);
             }
             
-            modal.classList.add('hidden');
             const container = document.getElementById('pdf-container');
             Array.from(container.querySelectorAll('canvas')).forEach(c => c.remove());
+            
+            // Ripristiniamo l'app
+            document.querySelectorAll('header, main, aside, #sidebar-overlay').forEach(el => {
+                if (el.id !== 'pdf-modal') el.style.display = '';
+            });
+            
+            // Forza il reset delle view corrette
+            let view = 'calendario';
+            if (!document.getElementById('view-mansioni').classList.contains('hidden')) view = 'mansioni';
+            if (!document.getElementById('view-canzoni').classList.contains('hidden')) view = 'canzoni';
+            switchView(view);
+            window.scrollTo(0, 0);
         }
         
         let touchstartX = 0;
@@ -1167,7 +1184,7 @@
 
     <!-- Modal per i PDF -->
     <div id="pdf-modal" class="fixed inset-0 z-[100] hidden bg-black flex flex-col">
-        <div id="pdf-modal-header" class="flex items-center justify-between bg-[#111111] p-4 border-b border-[#333333] touch-pan-y">
+        <div id="pdf-modal-header" class="flex items-center justify-between bg-[#111111] p-4 border-b border-[#333333] sticky top-0 z-[110] w-full">
             <h3 id="pdf-modal-title" class="text-white font-bold text-lg truncate flex-1 pr-2 select-none">Testo</h3>
             <div class="flex items-center gap-2">
                 <button onclick="closePdfModal()" class="text-gray-400 p-2 rounded-full hover:bg-white/10 shrink-0 border border-gray-600">
@@ -1175,12 +1192,12 @@
                 </button>
             </div>
         </div>
-        <div class="flex-1 w-full bg-[#111111] overflow-auto relative touch-pan-x touch-pan-y bg-white" id="pdf-container">
+        <div class="w-full relative bg-white pb-20" id="pdf-container">
             <div id="pdf-loader" class="flex items-center justify-center py-10 hidden w-full h-full absolute top-0 left-0 bg-white/80 z-10">
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
             </div>
         </div>
-        <div id="pdf-modal-footer" class="hidden items-center justify-between bg-[#111111] p-3 border-t border-[#333333] touch-pan-y">
+        <div id="pdf-modal-footer" class="hidden items-center justify-between bg-[#111111] p-3 border-t border-[#333333] fixed bottom-0 left-0 w-full z-[110]">
             <button id="pdf-prev-btn" onclick="prevPdf()" class="bg-[#222222] text-white px-4 py-2 rounded-lg font-bold flex gap-2 items-center active:bg-[#333333]">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </button>
