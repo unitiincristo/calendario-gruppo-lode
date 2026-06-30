@@ -994,6 +994,7 @@
             modal.classList.remove('hidden', 'fixed', 'inset-0', 'z-[100]', 'flex', 'flex-col');
             modal.classList.add('block', 'min-h-screen', 'bg-white');
             document.body.style.overflow = 'auto'; // Lascia fare lo scroll nativo al body
+            document.body.style.overscrollBehaviorY = 'none'; // Previene il pull-to-refresh
             
             renderCurrentPdf();
             
@@ -1130,6 +1131,7 @@
             const modal = document.getElementById('pdf-modal');
             modal.classList.add('hidden', 'fixed', 'inset-0', 'z-[100]', 'flex', 'flex-col');
             modal.classList.remove('block', 'min-h-screen', 'bg-white');
+            document.body.style.overscrollBehaviorY = '';
             
             const viewport = document.querySelector('meta[name="viewport"]');
             if (viewport) viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
@@ -1159,17 +1161,25 @@
         let touchendX = 0;
         function handlePdfSwipe() {
             if (currentPlaylist.length <= 1) return;
-            if (touchendX < touchstartX - 50) nextPdf();
-            if (touchendX > touchstartX + 50) prevPdf();
+            // Se l'utente ha zoomato, lo swipe serve per spostarsi, non per cambiare PDF
+            if (window.visualViewport && window.visualViewport.scale > 1.05) return;
+            
+            if (touchendX < touchstartX - 60) nextPdf();
+            if (touchendX > touchstartX + 60) prevPdf();
         }
         document.addEventListener('DOMContentLoaded', () => {
-            const header = document.getElementById('pdf-modal-header');
-            const footer = document.getElementById('pdf-modal-footer');
-            [header, footer].forEach(el => {
-                if(!el) return;
-                el.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, {passive: true});
-                el.addEventListener('touchend', e => { touchendX = e.changedTouches[0].screenX; handlePdfSwipe(); }, {passive: true});
-            });
+            const modal = document.getElementById('pdf-modal');
+            if (modal) {
+                modal.addEventListener('touchstart', e => { 
+                    if (e.changedTouches.length === 1) touchstartX = e.changedTouches[0].screenX; 
+                }, {passive: true});
+                modal.addEventListener('touchend', e => { 
+                    if (e.changedTouches.length === 1) {
+                        touchendX = e.changedTouches[0].screenX; 
+                        handlePdfSwipe(); 
+                    }
+                }, {passive: true});
+            }
         });
 
         fetchCalendarData();
