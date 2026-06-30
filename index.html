@@ -993,8 +993,9 @@
             const modal = document.getElementById('pdf-modal');
             modal.classList.remove('hidden', 'fixed', 'inset-0', 'z-[100]', 'flex', 'flex-col');
             modal.classList.add('block', 'min-h-screen', 'bg-white');
-            document.body.style.overflow = 'auto'; // Lascia fare lo scroll nativo al body
-            document.body.style.overscrollBehaviorY = 'none'; // Previene il pull-to-refresh
+            document.body.style.overflow = 'auto';
+            document.documentElement.style.overscrollBehaviorY = 'none';
+            document.body.style.overscrollBehaviorY = 'none';
             
             renderCurrentPdf();
             
@@ -1131,6 +1132,7 @@
             const modal = document.getElementById('pdf-modal');
             modal.classList.add('hidden', 'fixed', 'inset-0', 'z-[100]', 'flex', 'flex-col');
             modal.classList.remove('block', 'min-h-screen', 'bg-white');
+            document.documentElement.style.overscrollBehaviorY = '';
             document.body.style.overscrollBehaviorY = '';
             
             const viewport = document.querySelector('meta[name="viewport"]');
@@ -1159,9 +1161,10 @@
         
         let touchstartX = 0;
         let touchendX = 0;
+        let isPinching = false;
         function handlePdfSwipe() {
+            if (isPinching) return;
             if (currentPlaylist.length <= 1) return;
-            // Se l'utente ha zoomato, lo swipe serve per spostarsi, non per cambiare PDF
             if (window.visualViewport && window.visualViewport.scale > 1.05) return;
             
             if (touchendX < touchstartX - 60) nextPdf();
@@ -1171,12 +1174,21 @@
             const modal = document.getElementById('pdf-modal');
             if (modal) {
                 modal.addEventListener('touchstart', e => { 
-                    if (e.changedTouches.length === 1) touchstartX = e.changedTouches[0].screenX; 
+                    if (e.touches.length > 1) isPinching = true;
+                    if (e.touches.length === 1 && !isPinching) touchstartX = e.touches[0].screenX; 
                 }, {passive: true});
+                
+                modal.addEventListener('touchmove', e => {
+                    if (e.touches.length > 1) isPinching = true;
+                }, {passive: true});
+                
                 modal.addEventListener('touchend', e => { 
-                    if (e.changedTouches.length === 1) {
-                        touchendX = e.changedTouches[0].screenX; 
-                        handlePdfSwipe(); 
+                    if (e.touches.length === 0) { // tutte le dita sollevate
+                        if (!isPinching && e.changedTouches.length === 1) {
+                            touchendX = e.changedTouches[0].screenX; 
+                            handlePdfSwipe(); 
+                        }
+                        setTimeout(() => { isPinching = false; }, 300);
                     }
                 }, {passive: true});
             }
