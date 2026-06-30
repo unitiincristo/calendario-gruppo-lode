@@ -983,23 +983,28 @@
             document.body.style.overflow = 'hidden';
             
             const viewport = document.querySelector('meta[name="viewport"]');
-            if (viewport) viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes");
+            if (viewport) viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
+            
+            currentPdfZoom = 100;
+            document.getElementById('pdf-iframe').style.width = '100%';
             
             renderCurrentPdf();
             modal.classList.remove('hidden');
-            
-            if (window.visualViewport) {
-                updateFloatingButtons();
-                window.visualViewport.addEventListener('resize', updateFloatingButtons);
-                window.visualViewport.addEventListener('scroll', updateFloatingButtons);
-            }
+            updateFloatingButtons();
+        }
+
+        let currentPdfZoom = 100;
+        function changePdfZoom(delta) {
+            currentPdfZoom += delta;
+            if (currentPdfZoom < 100) currentPdfZoom = 100;
+            if (currentPdfZoom > 300) currentPdfZoom = 300;
+            document.getElementById('pdf-iframe').style.width = currentPdfZoom + '%';
         }
 
         function updateFloatingButtons() {
-            const vv = window.visualViewport;
             const prevBtn = document.getElementById('floating-prev');
             const nextBtn = document.getElementById('floating-next');
-            if(!prevBtn || !nextBtn || !vv) return;
+            if(!prevBtn || !nextBtn) return;
             
             if (currentPlaylist.length <= 1) {
                 prevBtn.style.display = 'none';
@@ -1007,10 +1012,6 @@
                 return;
             }
 
-            const scale = vv ? vv.scale : 1;
-            const inverseScale = 1 / scale;
-            
-            // Show always if there is a next/prev song
             prevBtn.style.opacity = currentPdfIndex > 0 ? '0.85' : '0';
             prevBtn.style.pointerEvents = currentPdfIndex > 0 ? 'auto' : 'none';
             
@@ -1019,12 +1020,6 @@
 
             prevBtn.style.display = 'flex';
             nextBtn.style.display = 'flex';
-
-            if (vv) {
-                const top = vv.pageTop + (vv.height / 2);
-                prevBtn.style.transform = `translate(${vv.pageLeft + 10}px, ${top}px) translate(0, -50%) scale(${inverseScale})`;
-                nextBtn.style.transform = `translate(${vv.pageLeft + vv.width - 10}px, ${top}px) translate(-100%, -50%) scale(${inverseScale})`;
-            }
         }
 
         function renderCurrentPdf() {
@@ -1078,13 +1073,9 @@
             const viewport = document.querySelector('meta[name="viewport"]');
             if (viewport) viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
             
-            if (window.visualViewport) {
-                window.visualViewport.removeEventListener('resize', updateFloatingButtons);
-                window.visualViewport.removeEventListener('scroll', updateFloatingButtons);
-            }
-            
             modal.classList.add('hidden');
             iframe.src = '';
+            iframe.style.width = '100%';
         }
         
         let touchstartX = 0;
@@ -1140,12 +1131,22 @@
             </button>
         </div>
 
-        <!-- Pulsanti fluttuanti per quando si fa lo zoom -->
-        <div id="floating-prev" onclick="prevPdf()" class="absolute left-0 top-0 z-[200] w-12 h-12 bg-[#222]/80 border border-white/10 text-white rounded-full items-center justify-center backdrop-blur shadow-[0_0_15px_rgba(0,0,0,0.5)] origin-center transition-opacity duration-300 opacity-0 pointer-events-none" style="display: none;">
+        <!-- Frecce di navigazione PDF (sempre al centro) -->
+        <div id="floating-prev" onclick="prevPdf()" class="absolute left-2 top-1/2 -translate-y-1/2 z-[200] w-12 h-12 bg-[#222]/80 border border-white/10 text-white rounded-full items-center justify-center backdrop-blur shadow-[0_0_15px_rgba(0,0,0,0.5)] transition-opacity duration-300 opacity-0 pointer-events-none" style="display: none;">
             <svg class="w-6 h-6 pr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
         </div>
-        <div id="floating-next" onclick="nextPdf()" class="absolute left-0 top-0 z-[200] w-12 h-12 bg-[#e53e3e]/80 border border-red-400/30 text-white rounded-full items-center justify-center backdrop-blur shadow-[0_0_15px_rgba(229,62,62,0.5)] origin-center transition-opacity duration-300 opacity-0 pointer-events-none" style="display: none;">
+        <div id="floating-next" onclick="nextPdf()" class="absolute right-2 top-1/2 -translate-y-1/2 z-[200] w-12 h-12 bg-[#e53e3e]/80 border border-red-400/30 text-white rounded-full items-center justify-center backdrop-blur shadow-[0_0_15px_rgba(229,62,62,0.5)] transition-opacity duration-300 opacity-0 pointer-events-none" style="display: none;">
             <svg class="w-6 h-6 pl-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+        </div>
+
+        <!-- Controlli Zoom Custom (in basso a destra) -->
+        <div class="absolute bottom-20 right-4 z-[200] flex flex-col gap-3">
+            <button onclick="changePdfZoom(25)" class="w-12 h-12 bg-[#111]/90 border border-white/20 text-white rounded-full flex items-center justify-center backdrop-blur shadow-lg active:bg-gray-800 transition-colors" title="Ingrandisci">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+            </button>
+            <button onclick="changePdfZoom(-25)" class="w-12 h-12 bg-[#111]/90 border border-white/20 text-white rounded-full flex items-center justify-center backdrop-blur shadow-lg active:bg-gray-800 transition-colors" title="Rimpicciolisci">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"></path></svg>
+            </button>
         </div>
     </div>
 </body>
