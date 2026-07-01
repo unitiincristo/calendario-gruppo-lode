@@ -96,7 +96,7 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
                 <div class="flex items-center gap-1 flex-1 min-w-0">
-                    <h1 class="text-base sm:text-lg font-bold tracking-wide text-[#ffffff] m-0 truncate">Calendario Gruppo Lode</h1>
+                    <h1 ondblclick="openAdminPrompt()" class="text-base sm:text-lg font-bold tracking-wide text-[#ffffff] m-0 truncate select-none cursor-pointer">Calendario Gruppo Lode</h1>
                     <button onclick="location.reload(true)" class="bg-white/[0.08] text-white border border-white/[0.15] hover:bg-white/[0.15] p-1.5 rounded-lg cursor-pointer transition-all shadow-sm shrink-0 active:scale-95 ml-1 flex items-center justify-center" title="Aggiorna App">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     </button>
@@ -174,6 +174,52 @@
                 <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] h-32"></div>
                 <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] h-32"></div>
             </div>
+        </div>
+    </main>
+
+    <main id="view-admin" class="hidden max-w-md mx-auto p-4 pb-12 animate-fade-in-up">
+        <h2 class="text-lg font-black text-white uppercase tracking-widest mb-4 pl-1 drop-shadow-md">Area Admin</h2>
+        
+        <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] shadow-[0_4px_10px_rgba(0,0,0,0.5)] mb-6">
+            <h3 class="font-bold text-[#ffffff] mb-4">Nuova Canzone (PDF)</h3>
+            
+            <label class="block text-sm text-[#aaaaaa] mb-1 font-bold">Titolo Canzone (es. The Joy)</label>
+            <input type="text" id="admin-title" class="w-full bg-[#222222] border border-[#444444] text-[#ffffff] text-sm rounded-lg p-2.5 mb-4 outline-none focus:border-emerald-500">
+            
+            <label class="block text-sm text-[#aaaaaa] mb-1 font-bold">Tonalità</label>
+            <select id="admin-key" class="w-full bg-[#222222] border border-[#444444] text-[#ffffff] text-sm rounded-lg p-2.5 mb-4 outline-none focus:border-emerald-500">
+                <option value="DO">DO</option>
+                <option value="DO#">DO#</option>
+                <option value="RE">RE</option>
+                <option value="MIb">MIb</option>
+                <option value="MI">MI</option>
+                <option value="FA">FA</option>
+                <option value="FA#">FA#</option>
+                <option value="SOL">SOL</option>
+                <option value="SOL#">SOL#</option>
+                <option value="LA">LA</option>
+                <option value="SIb">SIb</option>
+                <option value="SI">SI</option>
+                <option value="">- Nessuna Tonalità -</option>
+            </select>
+            
+            <label class="block text-sm text-[#aaaaaa] mb-1 font-bold">File PDF</label>
+            <input type="file" id="admin-file" accept="application/pdf" class="w-full text-sm text-[#aaaaaa] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20 mb-6 cursor-pointer">
+            
+            <button onclick="uploadToGitHub()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg active:scale-95 transition-all flex justify-center items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Carica su GitHub
+            </button>
+            <div id="admin-status" class="mt-4 text-sm font-bold hidden text-center p-3 rounded-lg"></div>
+        </div>
+
+        <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+            <h3 class="font-bold text-[#ffffff] mb-2">Impostazioni API</h3>
+            <p class="text-xs text-[#888888] mb-4">Inserisci qui il tuo GitHub Personal Access Token.</p>
+            <label class="block text-sm text-[#aaaaaa] mb-1 font-bold">GitHub Token</label>
+            <input type="password" id="admin-token" class="w-full bg-[#222222] border border-[#444444] text-[#ffffff] text-sm rounded-lg p-2.5 mb-2 outline-none focus:border-emerald-500">
+            <button onclick="saveAdminToken()" class="text-sm bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-4 rounded-lg transition-all">Salva Token</button>
+            <span id="token-saved-msg" class="text-emerald-400 text-xs ml-2 hidden">Salvato!</span>
         </div>
     </main>
 
@@ -304,9 +350,12 @@
             const titleElement = document.querySelector('header h1');
 
             // Reset all
+            const adminView = document.getElementById('view-admin');
+            
             calView.classList.add('hidden');
             manView.classList.add('hidden');
             canView.classList.add('hidden');
+            if (adminView) adminView.classList.add('hidden');
             
             navCal.className = "w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
             navMan.className = "w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
@@ -325,6 +374,10 @@
                 canView.classList.remove('hidden');
                 navCan.className = "w-full text-left bg-white/[0.05] text-white p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
                 titleElement.innerText = "Archivio Canzoni";
+            }
+            } else if (viewName === 'admin') {
+              if (adminView) adminView.classList.remove('hidden');
+              titleElement.innerText = "Area Admin";
             }
             if (fromNav) {
                 toggleSidebar();
@@ -1239,6 +1292,112 @@
         if (savedView && savedView !== 'calendario') {
             switchView(savedView);
         }
+        // -------- AREA ADMIN --------
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedToken = localStorage.getItem('github_pat');
+            if (savedToken) document.getElementById('admin-token').value = savedToken;
+        });
+
+        function openAdminPrompt() {
+            const pwd = prompt("Inserisci password Area Admin:");
+            if (pwd === "1111") {
+                switchView('admin');
+            } else if (pwd !== null) {
+                alert("Password errata!");
+            }
+        }
+
+        function saveAdminToken() {
+            const t = document.getElementById('admin-token').value.trim();
+            localStorage.setItem('github_pat', t);
+            const msg = document.getElementById('token-saved-msg');
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 2000);
+        }
+
+        async function uploadToGitHub() {
+            const token = localStorage.getItem('github_pat');
+            const statusDiv = document.getElementById('admin-status');
+            
+            if (!token) {
+                showAdminStatus("Errore: Salva prima il GitHub Token nelle impostazioni!", "red");
+                return;
+            }
+
+            const fileInput = document.getElementById('admin-file');
+            const titleInput = document.getElementById('admin-title').value.trim();
+            const keyInput = document.getElementById('admin-key').value;
+
+            if (fileInput.files.length === 0) {
+                showAdminStatus("Seleziona un file PDF!", "red"); return;
+            }
+            if (!titleInput) {
+                showAdminStatus("Inserisci il titolo della canzone!", "red"); return;
+            }
+
+            const file = fileInput.files[0];
+            const safeTitle = titleInput.replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ /g, '_').toUpperCase();
+            const safeKey = keyInput.replace(/[^a-zA-Z0-9#]/g, '');
+            const filename = safeKey ? `${safeTitle}_${safeKey}.pdf` : `${safeTitle}.pdf`;
+            const filePath = `pdf-accordi/${filename}`;
+
+            showAdminStatus("Lettura del file in corso...", "yellow");
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Content = e.target.result.split(',')[1];
+                
+                showAdminStatus("Caricamento su GitHub in corso...", "yellow");
+                
+                try {
+                    // Check se esiste già per prendere lo SHA
+                    let sha = null;
+                    const getRes = await fetch(`https://api.github.com/repos/unitiincristo/calendario-gruppo-lode/contents/${filePath}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (getRes.ok) {
+                        const data = await getRes.json();
+                        sha = data.sha;
+                    }
+
+                    const bodyData = {
+                        message: `Upload ${filename} via Web Admin`,
+                        content: base64Content
+                    };
+                    if (sha) bodyData.sha = sha;
+
+                    const putRes = await fetch(`https://api.github.com/repos/unitiincristo/calendario-gruppo-lode/contents/${filePath}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(bodyData)
+                    });
+
+                    if (putRes.ok) {
+                        showAdminStatus(`SUCCESSO! ${filename} caricato online! Attendi ~1 min e poi aggiorna l'app.`, "emerald");
+                        document.getElementById('admin-title').value = '';
+                        fileInput.value = '';
+                    } else {
+                        const errData = await putRes.json();
+                        showAdminStatus(`Errore GitHub: ${errData.message}`, "red");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showAdminStatus("Errore di rete durante il caricamento.", "red");
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showAdminStatus(msg, color) {
+            const el = document.getElementById('admin-status');
+            el.className = `mt-4 text-sm font-bold text-center p-3 rounded-lg bg-${color}-500/20 text-${color}-400 border border-${color}-500/30`;
+            el.innerText = msg;
+            el.classList.remove('hidden');
+        }
+
         // Aggiunta supporto pedale Bluetooth / Tastiera
         window.addEventListener('keydown', function(e) {
             const modal = document.getElementById('pdf-modal');
