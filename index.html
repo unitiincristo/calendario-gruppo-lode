@@ -688,8 +688,9 @@
                     formationBlock = `<div class="border-t border-b border-[#333333] py-3 mt-4"><p class="text-[11px] text-[#888888] uppercase font-bold tracking-wider mb-2">Formazione</p><div class="flex flex-wrap gap-2">${chips}</div></div>`;
                 }
                 
-                    let eventPlaylist = [];
-                    let encodedPlaylist = '';
+                let songsBlock = '';
+                let eventPlaylist = [];
+                let encodedPlaylist = '';
                     if (event['Scaletta Canzoni']) {
                         const separator = event['Scaletta Canzoni'].includes('|') ? '|' : ',';
                         const songs = event['Scaletta Canzoni'].split(separator).filter(s => s.trim() !== '');
@@ -829,6 +830,7 @@
                 const pastIndex = events.indexOf(event);
                 const staggerClass = pastIndex < 3 ? `stagger-${pastIndex + 1}` : '';
                 
+                let songsBlock = '';
                 let eventPlaylist = [];
                 let encodedPlaylist = '';
                 let hasSongs = false;
