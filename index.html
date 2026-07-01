@@ -532,7 +532,7 @@
         function resolveSongPdfUrl(songString, songData) {
             if (!songData || !songData['Link Accordi']) return null;
             
-            const safeTitle = (songData.Titolo || '').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ /g, '_');
+            const safeTitle = (songData.Titolo || '').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ /g, '_').toUpperCase();
             
             let requestedKey = null;
 
