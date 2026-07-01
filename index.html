@@ -1239,6 +1239,26 @@
         if (savedView && savedView !== 'calendario') {
             switchView(savedView);
         }
+        // Aggiunta supporto pedale Bluetooth / Tastiera
+        window.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('pdf-modal');
+            if (modal && !modal.classList.contains('hidden')) {
+                const scrollAmount = window.innerHeight * 0.8;
+                if (e.key === ' ' || e.key === 'ArrowDown' || e.key === 'PageDown') {
+                    e.preventDefault();
+                    window.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+                } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+                    e.preventDefault();
+                    window.scrollBy({ top: -scrollAmount, behavior: 'smooth' });
+                } else if (e.key === 'ArrowRight') {
+                    const nextBtn = document.getElementById('pdf-next-btn');
+                    if (nextBtn && !nextBtn.classList.contains('opacity-30')) nextBtn.click();
+                } else if (e.key === 'ArrowLeft') {
+                    const prevBtn = document.getElementById('pdf-prev-btn');
+                    if (prevBtn && !prevBtn.classList.contains('opacity-30')) prevBtn.click();
+                }
+            }
+        });
     </script>
 
     <!-- Modal per i PDF -->
