@@ -1218,6 +1218,22 @@
             }
         }
 
+        let isPdfDarkMode = false;
+        function togglePdfDarkMode() {
+            isPdfDarkMode = !isPdfDarkMode;
+            const container = document.getElementById('pdf-container');
+            const btn = document.getElementById('btn-pdf-dark-mode');
+            if (isPdfDarkMode) {
+                container.style.filter = 'invert(1) hue-rotate(180deg)';
+                btn.classList.replace('text-gray-400', 'text-emerald-400');
+                btn.classList.replace('border-gray-600', 'border-emerald-400');
+            } else {
+                container.style.filter = 'none';
+                btn.classList.replace('text-emerald-400', 'text-gray-400');
+                btn.classList.replace('border-emerald-400', 'border-gray-600');
+            }
+        }
+
         function closePdfModal() {
             const modal = document.getElementById('pdf-modal');
             modal.classList.add('hidden', 'fixed', 'inset-0', 'z-[100]', 'flex', 'flex-col');
@@ -1536,6 +1552,9 @@
         <div id="pdf-modal-header" class="flex items-center justify-between bg-[#111111] p-4 border-b border-[#333333] sticky top-0 z-[110] w-full">
             <h3 id="pdf-modal-title" class="text-white font-bold text-lg truncate flex-1 pr-2 select-none">Testo</h3>
             <div class="flex items-center gap-2">
+                <button onclick="togglePdfDarkMode()" id="btn-pdf-dark-mode" class="text-gray-400 p-2 rounded-full hover:bg-white/10 shrink-0 border border-gray-600 transition-colors" title="Modalità Notte">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
                 <button onclick="closePdfModal()" class="text-gray-400 p-2 rounded-full hover:bg-white/10 shrink-0 border border-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
