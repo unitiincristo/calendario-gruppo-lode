@@ -74,6 +74,13 @@
                 <svg class="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
                 Archivio Canzoni
             </button>
+            <button onclick="downloadAllForOffline()" id="nav-offline-sync" class="w-full text-left bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 p-3 rounded-xl font-bold flex items-center gap-3 transition-colors mt-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                <div class="flex flex-col">
+                    <span>Scarica PDF per l'Offline</span>
+                    <span id="offline-sync-status" class="text-[10px] font-normal text-emerald-500/70">Consigliato sotto Wi-Fi</span>
+                </div>
+            </button>
         </div>
         <div class="p-4 border-b border-white/[0.05] flex items-center justify-between">
             <h3 class="text-sm font-bold text-[#888888] uppercase tracking-widest">Archivio Eventi</h3>
@@ -406,8 +413,10 @@
                 });
             } catch (error) {
                 console.error("Errore fetch mansioni", error);
-                const container = document.getElementById('mansioni-container');
-                if (container) container.innerHTML = '<div class="text-red-400 text-center p-6 bg-red-500/10 rounded-xl border border-red-500/30">Errore di connessione a Google Sheets. Impossibile scaricare le mansioni. Riprova più tardi.</div>';
+                if (!cachedData) {
+                    const container = document.getElementById('mansioni-container');
+                    if (container) container.innerHTML = '<div class="text-red-400 text-center p-6 bg-red-500/10 rounded-xl border border-red-500/30">Errore di connessione a Google Sheets. Sei offline e non ci sono dati salvati.</div>';
+                }
             }
         }
 
@@ -491,8 +500,10 @@
                 });
             } catch (error) {
                 console.error("Errore fetch canzoni", error);
-                const container = document.getElementById('canzoni-container');
-                if (container) container.innerHTML = '<div class="text-red-400 text-center p-6 bg-red-500/10 rounded-xl border border-red-500/30">Errore di connessione a Google Sheets. Impossibile scaricare le canzoni. Riprova più tardi.</div>';
+                if (!cachedData) {
+                    const container = document.getElementById('canzoni-container');
+                    if (container) container.innerHTML = '<div class="text-red-400 text-center p-6 bg-red-500/10 rounded-xl border border-red-500/30">Errore di connessione a Google Sheets. Sei offline e non ci sono dati salvati.</div>';
+                }
             }
         }
 
@@ -1395,6 +1406,57 @@
             el.className = `mt-4 text-sm font-bold text-center p-3 rounded-lg bg-${color}-500/20 text-${color}-400 border border-${color}-500/30`;
             el.innerText = msg;
             el.classList.remove('hidden');
+        }
+
+        async function downloadAllForOffline() {
+            if (!allCanzoni || allCanzoni.length === 0) {
+                alert("Nessuna canzone trovata! Aspetta il caricamento o controlla la connessione.");
+                return;
+            }
+            
+            const statusEl = document.getElementById('offline-sync-status');
+            const btn = document.getElementById('nav-offline-sync');
+            btn.classList.add('opacity-50', 'pointer-events-none');
+            
+            let successCount = 0;
+            let total = allCanzoni.length;
+            
+            statusEl.innerText = `Calcolo in corso...`;
+            
+            const pdfUrlsToFetch = [];
+            
+            for (let c of allCanzoni) {
+                if (!c['Titolo'] || !c['Tonalità']) continue;
+                let title = c['Titolo'].replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ /g, '_').toUpperCase();
+                let keys = c['Tonalità'].split('|').map(k => k.trim());
+                for (let k of keys) {
+                    let safeKey = k.replace(/[^a-zA-Z0-9#b]/g, '');
+                    if (safeKey) {
+                        pdfUrlsToFetch.push(`pdf-accordi/${title}_${safeKey}.pdf`);
+                    }
+                }
+            }
+            
+            total = pdfUrlsToFetch.length;
+            
+            for (let i = 0; i < total; i++) {
+                statusEl.innerText = `Scaricamento ${i+1}/${total}...`;
+                try {
+                    await fetch(pdfUrlsToFetch[i], { cache: 'reload' });
+                    successCount++;
+                } catch (e) {
+                    console.error("Errore download", pdfUrlsToFetch[i], e);
+                }
+            }
+            
+            statusEl.innerText = `Completato! (${successCount} PDF)`;
+            statusEl.classList.replace('text-emerald-500/70', 'text-emerald-400');
+            statusEl.classList.add('font-bold');
+            btn.classList.remove('opacity-50', 'pointer-events-none');
+            
+            setTimeout(() => {
+                statusEl.innerText = "Disponibili Offline";
+            }, 3000);
         }
 
         // Aggiunta supporto pedale Bluetooth / Tastiera
