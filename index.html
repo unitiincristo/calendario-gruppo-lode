@@ -75,10 +75,10 @@
                 Archivio Canzoni
             </button>
             <button onclick="downloadAllForOffline()" id="nav-offline-sync" class="w-full text-left bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 p-3 rounded-xl font-bold flex items-center gap-3 transition-colors mt-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
-                <div class="flex flex-col">
-                    <span>Scarica PDF per l'Offline</span>
-                    <span id="offline-sync-status" class="text-[10px] font-normal text-emerald-500/70">Consigliato sotto Wi-Fi</span>
+                <svg id="offline-sync-icon" class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                <div class="flex flex-col min-w-0">
+                    <span id="offline-sync-title" class="truncate">Scarica PDF per l'Offline</span>
+                    <span id="offline-sync-status" class="text-[10px] font-normal text-emerald-500/70 truncate">Consigliato sotto Wi-Fi</span>
                 </div>
             </button>
         </div>
@@ -99,8 +99,9 @@
     <header class="bg-[#111111]/80 backdrop-blur-lg border-b border-white/[0.05] sticky top-0 z-30 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
         <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center gap-2">
             <div class="flex items-center gap-2 flex-1 min-w-0">
-                <button onclick="toggleSidebar()" class="text-[#ffffff] p-1 focus:outline-none cursor-pointer shrink-0">
+                <button onclick="toggleSidebar()" class="relative text-[#ffffff] p-1 focus:outline-none cursor-pointer shrink-0">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    <span id="menu-notification-dot" class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#111111] hidden pointer-events-none"></span>
                 </button>
                 <div class="flex items-center gap-1 flex-1 min-w-0">
                     <h1 ondblclick="openAdminPrompt()" class="text-base sm:text-lg font-bold tracking-wide text-[#ffffff] m-0 truncate select-none cursor-pointer">Calendario Gruppo Lode</h1>
@@ -576,6 +577,7 @@
                 `;
             });
             container.innerHTML = htmlContent;
+            checkOfflineSyncStatus();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1408,6 +1410,54 @@
             el.classList.remove('hidden');
         }
 
+        async function checkOfflineSyncStatus() {
+            if (!allCanzoni || allCanzoni.length === 0) return;
+            
+            let totalUrls = [];
+            for (let c of allCanzoni) {
+                if (!c['Titolo'] || !c['Tonalità']) continue;
+                let title = c['Titolo'].replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ /g, '_').toUpperCase();
+                let keys = c['Tonalità'].split('|').map(k => k.trim());
+                for (let k of keys) {
+                    let safeKey = k.replace(/[^a-zA-Z0-9#b]/g, '');
+                    if (safeKey) {
+                        totalUrls.push(`pdf-accordi/${title}_${safeKey}.pdf`);
+                    }
+                }
+            }
+            
+            let missingCount = 0;
+            for (let url of totalUrls) {
+                const match = await caches.match(url);
+                if (!match) missingCount++;
+            }
+            
+            const btn = document.getElementById('nav-offline-sync');
+            const statusEl = document.getElementById('offline-sync-status');
+            const titleEl = document.getElementById('offline-sync-title');
+            const iconEl = document.getElementById('offline-sync-icon');
+            const dot = document.getElementById('menu-notification-dot');
+            
+            if (missingCount > 0) {
+                btn.classList.remove('opacity-50', 'pointer-events-none', 'text-emerald-600', 'bg-transparent');
+                btn.classList.add('bg-emerald-500/20', 'text-emerald-400');
+                titleEl.innerText = "Sincronizza per l'Offline";
+                statusEl.innerText = `${missingCount} canzoni mancanti`;
+                statusEl.classList.replace('text-emerald-500/70', 'text-red-400');
+                iconEl.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>';
+                if (dot) dot.classList.remove('hidden');
+            } else {
+                btn.classList.add('opacity-50', 'pointer-events-none');
+                btn.classList.remove('bg-emerald-500/20', 'text-emerald-400');
+                btn.classList.add('bg-transparent', 'text-emerald-600');
+                titleEl.innerText = "Archivio Sincronizzato";
+                statusEl.innerText = `${totalUrls.length} canzoni salvate`;
+                statusEl.classList.replace('text-red-400', 'text-emerald-500/70');
+                iconEl.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+                if (dot) dot.classList.add('hidden');
+            }
+        }
+
         async function downloadAllForOffline() {
             if (!allCanzoni || allCanzoni.length === 0) {
                 alert("Nessuna canzone trovata! Aspetta il caricamento o controlla la connessione.");
@@ -1419,12 +1469,9 @@
             btn.classList.add('opacity-50', 'pointer-events-none');
             
             let successCount = 0;
-            let total = allCanzoni.length;
-            
             statusEl.innerText = `Calcolo in corso...`;
             
             const pdfUrlsToFetch = [];
-            
             for (let c of allCanzoni) {
                 if (!c['Titolo'] || !c['Tonalità']) continue;
                 let title = c['Titolo'].replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/ /g, '_').toUpperCase();
@@ -1437,26 +1484,29 @@
                 }
             }
             
-            total = pdfUrlsToFetch.length;
+            let missingUrls = [];
+            for (let url of pdfUrlsToFetch) {
+                const match = await caches.match(url);
+                if (!match) missingUrls.push(url);
+            }
+            
+            let total = missingUrls.length;
+            if (total === 0) {
+                checkOfflineSyncStatus();
+                return;
+            }
             
             for (let i = 0; i < total; i++) {
                 statusEl.innerText = `Scaricamento ${i+1}/${total}...`;
                 try {
-                    await fetch(pdfUrlsToFetch[i], { cache: 'reload' });
+                    await fetch(missingUrls[i], { cache: 'reload' });
                     successCount++;
                 } catch (e) {
-                    console.error("Errore download", pdfUrlsToFetch[i], e);
+                    console.error("Errore download", missingUrls[i], e);
                 }
             }
             
-            statusEl.innerText = `Completato! (${successCount} PDF)`;
-            statusEl.classList.replace('text-emerald-500/70', 'text-emerald-400');
-            statusEl.classList.add('font-bold');
-            btn.classList.remove('opacity-50', 'pointer-events-none');
-            
-            setTimeout(() => {
-                statusEl.innerText = "Disponibili Offline";
-            }, 3000);
+            checkOfflineSyncStatus();
         }
 
         // Aggiunta supporto pedale Bluetooth / Tastiera
