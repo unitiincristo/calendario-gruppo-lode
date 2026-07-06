@@ -607,10 +607,21 @@
         function getSongLinks(songName) {
             if (!allCanzoni || allCanzoni.length === 0) return null;
             const normalizedName = songName.toLowerCase().replace(/\(.*?\)/g, '').trim();
+            
+            // Pass 1: Exact match
             for (let c of allCanzoni) {
                 if (!c.Titolo) continue;
                 const normalizedTitolo = c.Titolo.toLowerCase().replace(/\(.*?\)/g, '').trim();
-                if (normalizedName === normalizedTitolo || normalizedName.includes(normalizedTitolo)) {
+                if (normalizedName === normalizedTitolo) {
+                    return c;
+                }
+            }
+            
+            // Pass 2: Partial match (Fallback se hanno scritto il titolo in modo parziale)
+            for (let c of allCanzoni) {
+                if (!c.Titolo) continue;
+                const normalizedTitolo = c.Titolo.toLowerCase().replace(/\(.*?\)/g, '').trim();
+                if (normalizedName.includes(normalizedTitolo) || normalizedTitolo.includes(normalizedName)) {
                     return c;
                 }
             }
