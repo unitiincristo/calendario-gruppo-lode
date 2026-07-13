@@ -1137,10 +1137,41 @@
         let currentPlaylist = [];
         let currentPdfIndex = 0;
 
+        let wakeLock = null;
+
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Wake Lock was released');
+                    });
+                } catch (err) {
+                    console.error(`Wake Lock error: ${err.name}, ${err.message}`);
+                }
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release()
+                    .then(() => {
+                        wakeLock = null;
+                    });
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (isPdfModalOpen && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
+
         function openPdfModal(playlistDataStr, index) {
             savedScrollPosition = window.scrollY || document.documentElement.scrollTop;
             history.pushState({ modal: 'pdf' }, '', '#pdf');
             isPdfModalOpen = true;
+            requestWakeLock();
 
             try {
                 let decodedStr = playlistDataStr;
@@ -1356,6 +1387,7 @@
                 return;
             }
             isPdfModalOpen = false;
+            releaseWakeLock();
 
             const modal = document.getElementById('pdf-modal');
             modal.classList.add('hidden', 'fixed', 'inset-0', 'z-[100]', 'flex', 'flex-col');
