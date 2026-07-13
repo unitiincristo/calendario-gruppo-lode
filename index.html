@@ -351,8 +351,15 @@
             }
         });
 
-        function switchView(viewName, fromNav = false) {
+        let savedScrollPosition = 0;
+        let isPdfModalOpen = false;
+
+        function switchView(viewName, fromNav = false, skipHistory = false) {
             sessionStorage.setItem('lodeAppCurrentView', viewName);
+            
+            if (!skipHistory) {
+                history.pushState({ view: viewName }, '', '#' + viewName);
+            }
             
             const calView = document.getElementById('view-calendario');
             const manView = document.getElementById('view-mansioni');
@@ -1064,15 +1071,14 @@
                 } else {
                     tasksDiv.classList.add('expanded');
                     tasksDiv.classList.add('border-t');
-                    caret.classList.add('rotate-180');
-                }
-            }
-        }
-
         let currentPlaylist = [];
         let currentPdfIndex = 0;
 
         function openPdfModal(playlistDataStr, index) {
+            savedScrollPosition = window.scrollY || document.documentElement.scrollTop;
+            history.pushState({ modal: 'pdf' }, '', '#pdf');
+            isPdfModalOpen = true;
+
             try {
                 let decodedStr = playlistDataStr;
                 if (playlistDataStr.startsWith('%5B')) {
@@ -1253,7 +1259,13 @@
             }
         }
 
-        function closePdfModal() {
+        function closePdfModal(fromHistory = false) {
+            if (!fromHistory) {
+                history.back(); // Questo scatena il popstate che richiama closePdfModal(true)
+                return;
+            }
+            isPdfModalOpen = false;
+
             const modal = document.getElementById('pdf-modal');
             modal.classList.add('hidden', 'fixed', 'inset-0', 'z-[100]', 'flex', 'flex-col');
             modal.classList.remove('block', 'min-h-screen', 'bg-white');
@@ -1280,8 +1292,9 @@
             let view = 'calendario';
             if (!document.getElementById('view-mansioni').classList.contains('hidden')) view = 'mansioni';
             if (!document.getElementById('view-canzoni').classList.contains('hidden')) view = 'canzoni';
-            switchView(view);
-            window.scrollTo(0, 0);
+            if (document.getElementById('view-admin') && !document.getElementById('view-admin').classList.contains('hidden')) view = 'admin';
+            switchView(view, false, true); // skip history push
+            window.scrollTo(0, savedScrollPosition);
         }
         
         let touchstartX = 0;
@@ -1334,11 +1347,24 @@
         fetchCalendarData();
         fetchCanzoniData();
         
-        // Restore view from session storage if exists
-        const savedView = sessionStorage.getItem('lodeAppCurrentView');
+        fetchCanzoniData();
+        
+        // Setup initial history state
+        const savedView = sessionStorage.getItem('lodeAppCurrentView') || 'calendario';
+        history.replaceState({ view: savedView }, '', '#' + savedView);
         if (savedView && savedView !== 'calendario') {
-            switchView(savedView);
+            switchView(savedView, false, true);
         }
+
+        window.addEventListener('popstate', (e) => {
+            if (isPdfModalOpen) {
+                closePdfModal(true);
+            } else if (e.state && e.state.view) {
+                switchView(e.state.view, false, true);
+            } else {
+                switchView('calendario', false, true);
+            }
+        });
         // -------- AREA ADMIN --------
         function openAdminPrompt() {
             const pwd = prompt("Inserisci password Area Admin:");
