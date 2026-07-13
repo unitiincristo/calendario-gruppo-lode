@@ -223,11 +223,18 @@
 
         <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
             <h3 class="font-bold text-[#ffffff] mb-2">Impostazioni API</h3>
-            <p class="text-xs text-[#888888] mb-4">Inserisci qui il tuo GitHub Personal Access Token.</p>
+            <p class="text-xs text-[#888888] mb-4">Configura i parametri di upload.</p>
+            
             <label class="block text-sm text-[#aaaaaa] mb-1 font-bold">GitHub Token</label>
-            <input type="password" id="admin-token" class="w-full bg-[#222222] border border-[#444444] text-[#ffffff] text-sm rounded-lg p-2.5 mb-2 outline-none focus:border-emerald-500">
-            <button onclick="saveAdminToken()" class="text-sm bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-4 rounded-lg transition-all">Salva Token</button>
-            <span id="token-saved-msg" class="text-emerald-400 text-xs ml-2 hidden">Salvato!</span>
+            <input type="password" id="admin-token" class="w-full bg-[#222222] border border-[#444444] text-[#ffffff] text-sm rounded-lg focus:ring-[#666666] focus:border-[#666666] block p-2.5 outline-none mb-4" placeholder="ghp_xxxxxxxxxxxx">
+            
+            <label class="block text-sm text-[#aaaaaa] mb-1 font-bold">Google Apps Script Web App URL (Opzionale)</label>
+            <input type="password" id="admin-gas-url" class="w-full bg-[#222222] border border-[#444444] text-[#ffffff] text-sm rounded-lg focus:ring-[#666666] focus:border-[#666666] block p-2.5 outline-none mb-6" placeholder="https://script.google.com/macros/s/.../exec">
+            
+            <button onclick="saveAdminSettings()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg active:scale-95 transition-all">
+              Salva Impostazioni
+            </button>
+            <span id="token-saved-msg" class="text-emerald-400 text-xs mt-2 block text-center hidden">Salvato!</span>
         </div>
     </main>
 
@@ -600,6 +607,7 @@
                     renderCanzoni(filtered);
                 });
             }
+            loadAdminSettings();
         });
 
         let allEvents = []; // Variabile globale per la ricerca
@@ -1332,11 +1340,6 @@
             switchView(savedView);
         }
         // -------- AREA ADMIN --------
-        document.addEventListener("DOMContentLoaded", () => {
-            const savedToken = localStorage.getItem('github_pat');
-            if (savedToken) document.getElementById('admin-token').value = savedToken;
-        });
-
         function openAdminPrompt() {
             const pwd = prompt("Inserisci password Area Admin:");
             if (pwd === "1111") {
@@ -1346,12 +1349,22 @@
             }
         }
 
-        function saveAdminToken() {
-            const t = document.getElementById('admin-token').value.trim();
-            localStorage.setItem('github_pat', t);
+        function saveAdminSettings() {
+            const token = document.getElementById('admin-token').value.trim();
+            const gasUrl = document.getElementById('admin-gas-url').value.trim();
+            if (token) localStorage.setItem('github_pat', token);
+            if (gasUrl) localStorage.setItem('gas_url', gasUrl);
+            showAdminStatus("Impostazioni salvate con successo!", "emerald");
             const msg = document.getElementById('token-saved-msg');
             msg.classList.remove('hidden');
             setTimeout(() => msg.classList.add('hidden'), 2000);
+        }
+
+        function loadAdminSettings() {
+            const token = localStorage.getItem('github_pat');
+            const gasUrl = localStorage.getItem('gas_url');
+            if (token) document.getElementById('admin-token').value = token;
+            if (gasUrl) document.getElementById('admin-gas-url').value = gasUrl;
         }
 
         async function uploadToGitHub() {
@@ -1415,7 +1428,24 @@
                     });
 
                     if (putRes.ok) {
-                        showAdminStatus(`SUCCESSO! ${filename} caricato online! Attendi ~1 min e poi aggiorna l'app.`, "emerald");
+                        showAdminStatus("✅ File caricato con successo!", "emerald");
+                        
+                        // Chiama il Webhook di Google Sheets per aggiornare i dati automaticamente
+                        const gasUrl = localStorage.getItem('gas_url');
+                        if (gasUrl) {
+                            showAdminStatus("🔄 Sincronizzazione Google Sheets in corso...", "yellow");
+                            try {
+                                await fetch(gasUrl, { mode: 'no-cors' });
+                                showAdminStatus("✅ Canzone caricata e sincronizzata! Aggiorna l'app.", "emerald");
+                            } catch (err) {
+                                showAdminStatus("⚠️ File su GitHub, ma errore di sync.", "yellow");
+                            }
+                        } else {
+                            setTimeout(() => {
+                                showAdminStatus("File caricato! Aggiorna l'app.", "emerald");
+                            }, 2000);
+                        }
+
                         document.getElementById('admin-title').value = '';
                         fileInput.value = '';
                     } else {
