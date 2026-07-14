@@ -1247,8 +1247,12 @@
             nextBtn.style.transform = `translate(${leftNext}px, ${top}px) translate(0, -50%) scale(${inverseScale})`;
         }
 
-        const pdfjsLib = window['pdfjs-dist/build/pdf'];
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        const pdfjsLib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+        if (pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        } else {
+            console.error('PDF.js library failed to load.');
+        }
         let pdfDoc = null;
 
         function togglePdfSearch() {
