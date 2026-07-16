@@ -10,7 +10,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="./pdfjs/pdf.min.js"></script>
     <style>
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
@@ -1249,7 +1249,7 @@
 
         const pdfjsLib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
         if (pdfjsLib) {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+            pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs/pdf.worker.min.js';
         } else {
             console.error('PDF.js library failed to load.');
         }
@@ -1328,7 +1328,7 @@
                 }
             } catch (err) {
                 console.error("Errore PDF:", err);
-                container.innerHTML += '<div class="text-black p-4 text-center mt-10">File PDF non trovato in locale.<br>Hai scaricato i file correttamente?</div>';
+                container.innerHTML += `<div class="text-black p-4 text-center mt-10">File PDF non trovato o errore di lettura.<br><br><span class="text-xs text-red-500">Dettaglio Errore: ${err.message || err}</span><br><br>Hai scaricato i file correttamente?</div>`;
             } finally {
                 loader.classList.add('hidden');
             }
