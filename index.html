@@ -105,8 +105,8 @@
                 </button>
                 <div class="flex items-center gap-1 flex-1 min-w-0">
                     <h1 ondblclick="openAdminPrompt()" class="text-base sm:text-lg font-bold tracking-wide text-[#ffffff] m-0 truncate select-none cursor-pointer">Calendario Gruppo Lode</h1>
-                    <button onclick="location.reload(true)" class="bg-white/[0.08] text-white border border-white/[0.15] hover:bg-white/[0.15] p-1.5 rounded-lg cursor-pointer transition-all shadow-sm shrink-0 active:scale-95 ml-1 flex items-center justify-center" title="Aggiorna App">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <button id="refresh-btn" onclick="refreshApp()" class="bg-white/[0.08] text-white border border-white/[0.15] hover:bg-white/[0.15] p-1.5 rounded-lg cursor-pointer transition-all shadow-sm shrink-0 active:scale-95 ml-1 flex items-center justify-center" title="Aggiorna App">
+                        <svg id="refresh-icon" class="w-4 h-4 transition-transform duration-700" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     </button>
                 </div>
             </div>
@@ -736,8 +736,25 @@
 
         document.getElementById('search-input').addEventListener('input', function(e) {
             const query = e.target.value.toLowerCase();
+            // La ricerca filtra sia gli eventi passati nel sidebar che ricarica la vista completa
             processEvents(allEvents, false, query); 
         });
+
+        function refreshApp() {
+            const icon = document.getElementById('refresh-icon');
+            const btn = document.getElementById('refresh-btn');
+            if (!icon || btn.disabled) return;
+            // Avvia animazione di rotazione
+            icon.style.transform = 'rotate(360deg)';
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            // Pulisce localStorage per forzare il ricaricamento dei dati freschi
+            localStorage.removeItem('lodeAppData');
+            localStorage.removeItem('lodeAppCanzoni');
+            localStorage.removeItem('lodeAppMansioni');
+            // Ricarica dopo un breve ritardo per far vedere l'animazione
+            setTimeout(() => location.reload(true), 600);
+        }
 
         async function fetchCalendarData() {
             const badge = document.getElementById('status-badge');
@@ -1473,8 +1490,6 @@
         });
 
         fetchCalendarData();
-        fetchCanzoniData();
-        
         fetchCanzoniData();
         
         // Setup initial history state

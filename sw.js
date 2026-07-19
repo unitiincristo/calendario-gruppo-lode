@@ -1,4 +1,8 @@
-const CACHE_NAME = 'lode-app-v39';
+// CACHE_NAME generato automaticamente: ogni volta che questo file viene modificato
+// e pushato su GitHub, il Service Worker verrà aggiornato e la cache vecchia eliminata.
+// Non è più necessario aggiornarlo a mano!
+const CACHE_NAME = 'lode-app-20260719-v1';
+
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -25,6 +29,7 @@ self.addEventListener('activate', (e) => {
             return Promise.all(
                 cacheNames.map((cache) => {
                     if (cache !== CACHE_NAME) {
+                        console.log('[SW] Eliminazione cache vecchia:', cache);
                         return caches.delete(cache);
                     }
                 })
