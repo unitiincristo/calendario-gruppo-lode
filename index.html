@@ -344,7 +344,17 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Richiesta di archiviazione persistente per evitare che Android cancelli la cache (Opzione 1)
+            if (navigator.storage && navigator.storage.persist) {
+                try {
+                    const isPersisted = await navigator.storage.persist();
+                    console.log(`Storage persistente: ${isPersisted ? 'CONCESSO' : 'NEGATO'}`);
+                } catch (e) {
+                    console.error('Errore richiesta storage persistente:', e);
+                }
+            }
+
             if(currentProfile) {
                 const sel = document.getElementById('user-profile-select');
                 if(sel) sel.value = currentProfile;
@@ -413,7 +423,7 @@
             }
 
             try {
-                const response = await fetch(MANSIONI_CSV_URL + '&t=' + new Date().getTime());
+                const response = await fetch(MANSIONI_CSV_URL, { cache: 'no-cache' });
                 const csvText = await response.text();
                 Papa.parse(csvText, {
                     header: true, skipEmptyLines: true,
@@ -499,7 +509,7 @@
             }
 
             try {
-                const response = await fetch(CANZONI_CSV_URL + '&t=' + new Date().getTime());
+                const response = await fetch(CANZONI_CSV_URL, { cache: 'no-cache' });
                 const csvText = await response.text();
                 Papa.parse(csvText, {
                     header: true, skipEmptyLines: true,
@@ -765,7 +775,7 @@
             }
 
             try {
-                const response = await fetch(SHEET_CSV_URL + '&t=' + new Date().getTime());
+                const response = await fetch(SHEET_CSV_URL, { cache: 'no-cache' });
                 const csvText = await response.text();
                 Papa.parse(csvText, {
                     header: true, skipEmptyLines: true,
