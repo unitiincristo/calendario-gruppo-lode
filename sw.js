@@ -1,7 +1,7 @@
 // CACHE_NAME generato automaticamente: ogni volta che questo file viene modificato
 // e pushato su GitHub, il Service Worker verrà aggiornato e la cache vecchia eliminata.
 // Non è più necessario aggiornarlo a mano!
-const CACHE_NAME = 'lode-app-20260720-v2';
+const CACHE_NAME = 'lode-app-20260720-v3';
 
 const STATIC_ASSETS = [
     './',
@@ -10,8 +10,8 @@ const STATIC_ASSETS = [
     './icon.png',
     './pdfjs/pdf.min.js',
     './pdfjs/pdf.worker.min.js',
-    'https://cdn.tailwindcss.com/3.4.1',
-    'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js'
+    './tailwind.min.js',
+    './papaparse.min.js'
 ];
 
 self.addEventListener('install', (e) => {
