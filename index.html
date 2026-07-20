@@ -797,9 +797,15 @@
                             localStorage.setItem('lodeAppData', newDataStr);
                             allEvents = results.data;
                             processEvents(allEvents); 
+                            if (!navigator.onLine) {
+                                badge.innerText = "Offline (Cache)";
+                                badge.className = "bg-amber-500/10 text-amber-500 text-[10px] uppercase font-bold px-2 py-1 rounded border border-amber-500/20";
+                                document.getElementById('offline-warning').classList.remove('hidden');
+                            } else {
+                                badge.innerText = "Aggiornato";
+                                badge.className = "bg-white/[0.03] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-light border border-white/[0.05] shrink-0";
+                            }
                         }
-                        badge.innerText = "Aggiornato";
-                        badge.className = "bg-white/[0.03] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-light border border-white/[0.05] shrink-0";
                     }
                 });
             } catch (error) {
