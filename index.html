@@ -543,23 +543,33 @@
             canzoni.forEach((c, index) => {
                 if (!c.Titolo) return;
                 
-                const makeBtn = (url, label, color, icon) => {
+                const makeBtn = (url, defaultLabel, color, icon) => {
                     if (!url) return '';
                     const urls = url.split('|');
                     return urls.map((u, i) => {
-                        const lbl = urls.length > 1 ? `${label} ${i+1}` : label;
-                        const safeUrl = u.trim().replace(/'/g, "\\'");
+                        let linkUrl = u.trim();
+                        let linkLabel = urls.length > 1 ? `${defaultLabel} ${i+1}` : defaultLabel;
+                        
+                        // Support custom labels like "DEMO ITALIANO: https://..."
+                        const httpIndex = linkUrl.indexOf('http');
+                        const colonIndex = linkUrl.indexOf(':');
+                        if (colonIndex > 0 && (httpIndex === -1 || colonIndex < httpIndex)) {
+                            linkLabel = linkUrl.substring(0, colonIndex).trim();
+                            linkUrl = linkUrl.substring(colonIndex + 1).trim();
+                        }
+
+                        const safeUrl = linkUrl.replace(/'/g, "\\'");
                         const safeTitle = c.Titolo.replace(/'/g, "\\'");
                         const isLocalPdf = safeUrl.endsWith('.pdf');
                         if (isLocalPdf) {
-                            return `<button onclick="openPdfModal('${safeUrl}', '${safeTitle} - ${lbl}')" class="flex items-center gap-2 bg-${color}-500/10 hover:bg-${color}-500/20 text-${color}-400 border border-${color}-500/30 px-3 py-2 rounded-xl text-xs font-bold transition-colors">
+                            return `<button onclick="openPdfModal('${safeUrl}', '${safeTitle} - ${linkLabel}')" class="flex items-center gap-2 bg-${color}-500/10 hover:bg-${color}-500/20 text-${color}-400 border border-${color}-500/30 px-3 py-2 rounded-xl text-xs font-bold transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${icon}</svg>
-                                ${lbl}
+                                ${linkLabel}
                             </button>`;
                         } else {
                             return `<a href="${safeUrl}" target="_blank" class="flex items-center gap-2 bg-${color}-500/10 hover:bg-${color}-500/20 text-${color}-400 border border-${color}-500/30 px-3 py-2 rounded-xl text-xs font-bold transition-colors no-underline">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${icon}</svg>
-                                ${lbl}
+                                ${linkLabel}
                             </a>`;
                         }
                     }).join('');
