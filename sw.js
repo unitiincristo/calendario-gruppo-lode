@@ -1,7 +1,7 @@
 // CACHE_NAME generato automaticamente: ogni volta che questo file viene modificato
 // e pushato su GitHub, il Service Worker verrà aggiornato e la cache vecchia eliminata.
 // Non è più necessario aggiornarlo a mano!
-const CACHE_NAME = 'lode-app-20260729-v7';
+const CACHE_NAME = 'lode-app-20260729-v8';
 
 const STATIC_ASSETS = [
     './',

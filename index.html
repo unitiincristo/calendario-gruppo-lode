@@ -786,8 +786,10 @@
             const badge = document.getElementById('status-badge');
             const cachedData = localStorage.getItem('lodeAppData');
             if(cachedData) {
-                allEvents = JSON.parse(cachedData);
-                processEvents(allEvents);
+                try {
+                    allEvents = JSON.parse(cachedData);
+                    processEvents(allEvents);
+                } catch(e) { console.error('Errore processamento cache:', e); }
                 badge.innerText = "Dati salvati";
                 badge.className = "bg-white/[0.03] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-light border border-white/[0.05] shrink-0";
             }
@@ -798,17 +800,20 @@
                 Papa.parse(csvText, {
                     header: true, skipEmptyLines: true,
                     complete: function(results) { 
-                        const newDataStr = JSON.stringify(results.data);
-                        if (newDataStr !== cachedData) {
-                            localStorage.setItem('lodeAppData', newDataStr);
-                            allEvents = results.data;
-                            processEvents(allEvents); 
-                        }
+                        try {
+                            const newDataStr = JSON.stringify(results.data);
+                            if (newDataStr !== cachedData) {
+                                localStorage.setItem('lodeAppData', newDataStr);
+                                allEvents = results.data;
+                                processEvents(allEvents); 
+                            }
+                        } catch(e) { console.error('Errore processamento dati:', e); }
                         // Aggiorna SEMPRE il badge dopo fetch riuscito
                         if (!navigator.onLine) {
                             badge.innerText = "Offline (Cache)";
                             badge.className = "bg-amber-500/10 text-amber-500 text-[10px] uppercase font-bold px-2 py-1 rounded border border-amber-500/20";
-                            document.getElementById('offline-warning').classList.remove('hidden');
+                            var offWarn = document.getElementById('offline-warning');
+                            if (offWarn) offWarn.classList.remove('hidden');
                         } else {
                             badge.innerText = "Aggiornato";
                             badge.className = "bg-white/[0.03] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-light border border-white/[0.05] shrink-0";
@@ -816,8 +821,10 @@
                     }
                 });
             } catch (error) {
+                console.error('Errore fetch calendario:', error);
                 if(!cachedData) {
                     badge.innerText = "Sei Offline";
+                    badge.className = "bg-amber-500/10 text-amber-500 text-[10px] uppercase font-bold px-2 py-1 rounded border border-amber-500/20";
                 } else {
                     badge.innerText = "Offline (Dati salvati)";
                     badge.className = "bg-white/[0.03] text-[#aaaaaa] text-xs px-2.5 py-1 rounded-full font-light border border-white/[0.05] shrink-0";
