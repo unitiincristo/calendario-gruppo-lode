@@ -249,6 +249,21 @@
             document.getElementById('sidebar-overlay').classList.toggle('hidden');
         }
 
+        window.addEventListener('error', function(e) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:white;z-index:9999;padding:10px;font-size:12px;word-break:break-all;';
+            errDiv.innerText = 'ERR: ' + e.message + ' at ' + e.filename + ':' + e.lineno;
+            document.body.appendChild(errDiv);
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'position:fixed;top:40px;left:0;width:100%;background:orange;color:black;z-index:9999;padding:10px;font-size:12px;word-break:break-all;';
+            errDiv.innerText = 'REJ: ' + (e.reason ? e.reason.message || e.reason : 'Unknown');
+            document.body.appendChild(errDiv);
+        });
+
+
+
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 
         let deferredPrompt;
