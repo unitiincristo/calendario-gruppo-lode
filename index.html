@@ -364,7 +364,7 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             // Richiesta di archiviazione persistente per evitare che Android cancelli la cache
             if (navigator.storage && navigator.storage.persist) {
                 navigator.storage.persist().then(isPersisted => {
@@ -893,20 +893,39 @@
             renderUpcoming(upcoming, upcomingContainer);
             
             if (past.length > 0) {
-                let archHtml = '';
-                past.forEach(e => {
-                    archHtml += renderEventCard(e, false, query);
-                });
-                document.getElementById('archivio-eventi-container').innerHTML = archHtml;
+                renderUpcoming(past, document.getElementById('archivio-eventi-container'));
             } else {
                 document.getElementById('archivio-eventi-container').innerHTML = '<p class="text-gray-400 text-center p-6">Nessun evento passato.</p>';
             }
         }
 
-        
-        function renderEventCard(event, isHero, query = '') {
-            let htmlCard = '';
-            let formationBlock = '';
+        function renderUpcoming(events, container) {
+            if(events.length === 0) {
+                container.innerHTML = `<p class="text-center text-[#888888] font-light py-8">Nessun evento in programma.</p>`;
+                return;
+            }
+
+            let htmlContent = '';
+            let currentMonth = '';
+
+            events.forEach((event, index) => {
+                const monthStr = getMonthName(event.Data);
+                const isHero = index === 0;
+
+                // Creazione del Divisore Mensile
+                if (monthStr !== currentMonth) {
+                    htmlContent += `
+                    <div class="${index === 0 ? 'mb-6' : 'mt-12 mb-6'} flex items-center gap-3">
+                        <div class="bg-[#333333] p-2 rounded-lg border border-[#555555] shadow-md">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="text-white text-xl font-black tracking-widest uppercase drop-shadow-md">${monthStr}</h3>
+                        <div class="flex-1 h-px bg-gradient-to-r from-white/[0.1] to-transparent ml-2"></div>
+                    </div>`;
+                    currentMonth = monthStr;
+                }
+
+                let formationBlock = '';
                 if (event.Formazione) {
                     const members = event.Formazione.split(',').map(m => m.trim()).filter(m => m !== '');
                     const chips = members.map(m => `<span class="bg-white/[0.05] text-[#cccccc] text-xs font-medium px-2.5 py-1 rounded-md border border-white/[0.05] shadow-sm">${m}</span>`).join('');
@@ -967,7 +986,6 @@
                                 if (t !== '') baseKey = t;
                             }
 
-                            if (keyMatch) {
                             if (keyMatch) {
                                 displayTitle = songClean.replace(/\(.*?\)/g, '').trim();
                             }
@@ -1038,8 +1056,8 @@
                 const titleClass = isHero ? "text-[14px] px-3.5 py-1.5" : "text-[12px] px-3 py-1";
                 const themeClass = getEventColorTheme(calendarTitle);
 
-                const staggerClass = '';
-                htmlCard += `<div class="rounded-2xl ${cardStyle} mb-4 animate-fade-in-up ${staggerClass}">
+                const staggerClass = index < 3 ? `stagger-${index + 1}` : '';
+                htmlContent += `<div class="rounded-2xl ${cardStyle} mb-4 animate-fade-in-up ${staggerClass}">
                     ${dateBadge}
                     <div class="flex justify-between items-start gap-4">
                         <div class="flex-1">
@@ -1053,40 +1071,7 @@
                     </div>
                     ${formationBlock}${songsBlock}${notesBlock}${calendarBtn}
                 </div>`;
-            
-            return htmlCard;
-        }
-
-        function renderUpcoming(events, container) {
-            if(events.length === 0) {
-                container.innerHTML = `<p class="text-center text-[#888888] font-light py-8">Nessun evento in programma.</p>`;
-                return;
-            }
-
-            let htmlContent = '';
-            let currentMonth = '';
-
-            events.forEach((event, index) => {
-                const monthStr = getMonthName(event.Data);
-                const isHero = index === 0;
-
-                // Creazione del Divisore Mensile
-                if (monthStr !== currentMonth) {
-                    htmlContent += `
-                    <div class="${index === 0 ? 'mb-6' : 'mt-12 mb-6'} flex items-center gap-3">
-                        <div class="bg-[#333333] p-2 rounded-lg border border-[#555555] shadow-md">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        </div>
-                        <h3 class="text-white text-xl font-black tracking-widest uppercase drop-shadow-md">${monthStr}</h3>
-                        <div class="flex-1 h-px bg-gradient-to-r from-white/[0.1] to-transparent ml-2"></div>
-                    </div>`;
-                    currentMonth = monthStr;
-                }
-
-                
-              let formationBlock = ''; // For month separator, etc.
-              htmlContent += renderEventCard(event, isHero, '');
-});
+            });
             container.innerHTML = htmlContent;
         }
 
