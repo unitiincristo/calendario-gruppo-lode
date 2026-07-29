@@ -74,6 +74,10 @@
                 <svg class="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
                 Archivio Canzoni
             </button>
+            <button onclick="switchView('archivio-eventi', true)" id="nav-archivio-eventi" class="w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
+                <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                Archivio Eventi
+            </button>
             <button onclick="downloadAllForOffline()" id="nav-offline-sync" class="w-full text-left bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 p-3 rounded-xl font-bold flex items-center gap-3 transition-colors mt-2">
                 <svg id="offline-sync-icon" class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
                 <div class="flex flex-col min-w-0">
@@ -94,6 +98,9 @@
             </div>
         </div>
         <div id="past-events-container" class="p-4 overflow-y-auto flex-1 space-y-4"></div>
+        <div class="mt-auto p-2 text-center text-[10px] text-[#555555] font-bold tracking-widest uppercase">
+            Versione App: v2.5
+        </div>
     </aside>
 
     <header class="bg-[#111111]/80 backdrop-blur-lg border-b border-white/[0.05] sticky top-0 z-30 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
@@ -183,6 +190,11 @@
                 <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] h-32"></div>
             </div>
         </div>
+    </main>
+
+    <main id="view-archivio-eventi" class="hidden max-w-md mx-auto p-4 pb-12">
+        <h2 class="text-lg font-black text-white uppercase tracking-widest mb-4 pl-1 drop-shadow-md">Archivio Eventi</h2>
+        <div id="archivio-eventi-container" class="space-y-4"></div>
     </main>
 
     <main id="view-admin" class="hidden max-w-md mx-auto p-4 pb-12 animate-fade-in-up">
@@ -340,6 +352,15 @@
             currentProfile = val;
             localStorage.setItem('lode-user-profile', val);
             if (typeof allEvents !== 'undefined' && allEvents.length > 0) {
+                if (typeof oldEvents !== 'undefined' && oldEvents.length > 0) {
+                    let archHtml = '';
+                    oldEvents.forEach(e => {
+                        archHtml += renderEventCard(e, false, '');
+                    });
+                    document.getElementById('archivio-eventi-container').innerHTML = archHtml;
+                } else {
+                    document.getElementById('archivio-eventi-container').innerHTML = '<p class="text-gray-400 text-center p-6">Nessun evento passato.</p>';
+                }
                 processEvents(allEvents, false);
             }
         }
@@ -374,24 +395,26 @@
             const calView = document.getElementById('view-calendario');
             const manView = document.getElementById('view-mansioni');
             const canView = document.getElementById('view-canzoni');
+            const archView = document.getElementById('view-archivio-eventi');
+            const adminView = document.getElementById('view-admin');
+            
+            if (calView) calView.classList.add('hidden');
+            if (manView) manView.classList.add('hidden');
+            if (canView) canView.classList.add('hidden');
+            if (archView) archView.classList.add('hidden');
+            if (adminView) adminView.classList.add('hidden');
             
             const navCal = document.getElementById('nav-calendario');
             const navMan = document.getElementById('nav-mansioni');
             const navCan = document.getElementById('nav-canzoni');
+            const navArch = document.getElementById('nav-archivio-eventi');
             
             const titleElement = document.querySelector('header h1');
-
-            // Reset all
-            const adminView = document.getElementById('view-admin');
-            
-            calView.classList.add('hidden');
-            manView.classList.add('hidden');
-            canView.classList.add('hidden');
-            if (adminView) adminView.classList.add('hidden');
             
             navCal.className = "w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
             navMan.className = "w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
             navCan.className = "w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
+            if(navArch) navArch.className = "w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
 
             if (viewName === 'calendario') {
                 calView.classList.remove('hidden');
@@ -406,9 +429,13 @@
                 canView.classList.remove('hidden');
                 navCan.className = "w-full text-left bg-white/[0.05] text-white p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
                 titleElement.innerText = "Archivio Canzoni";
+            } else if (viewName === 'archivio-eventi') {
+                archView.classList.remove('hidden');
+                if (navArch) navArch.className = "w-full text-left bg-white/[0.05] text-white p-3 rounded-xl font-bold flex items-center gap-3 transition-colors";
+                titleElement.innerText = "Archivio Eventi";
             } else if (viewName === 'admin') {
-              if (adminView) adminView.classList.remove('hidden');
-              titleElement.innerText = "Area Admin";
+                if (adminView) adminView.classList.remove('hidden');
+                titleElement.innerText = "Area Admin";
             }
             if (fromNav) {
                 toggleSidebar();
