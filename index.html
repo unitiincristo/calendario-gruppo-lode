@@ -1194,6 +1194,49 @@
 
         let currentPlaylist = [];
         let currentPdfIndex = 0;
+        
+        // Variabili per il Book Mode (scorrimento orizzontale delle pagine)
+        let pdfCanvases = [];
+        let currentPdfPageNumber = 1;
+        let totalPdfPages = 0;
+        let originalPdfTitle = "";
+
+        function updatePdfTitleWithPage() {
+            const titleEl = document.getElementById('pdf-modal-title');
+            if (totalPdfPages > 1) {
+                titleEl.textContent = `${originalPdfTitle} (${currentPdfPageNumber}/${totalPdfPages})`;
+            } else {
+                titleEl.textContent = originalPdfTitle;
+            }
+        }
+
+        function nextPageOrSong() {
+            if (totalPdfPages > 1 && currentPdfPageNumber < totalPdfPages) {
+                // Vai alla pagina successiva del PDF corrente
+                pdfCanvases[currentPdfPageNumber - 1].classList.add('hidden');
+                currentPdfPageNumber++;
+                pdfCanvases[currentPdfPageNumber - 1].classList.remove('hidden');
+                window.scrollTo(0, 0);
+                updatePdfTitleWithPage();
+            } else {
+                // Vai alla canzone successiva
+                nextPdf();
+            }
+        }
+
+        function prevPageOrSong() {
+            if (totalPdfPages > 1 && currentPdfPageNumber > 1) {
+                // Vai alla pagina precedente del PDF corrente
+                pdfCanvases[currentPdfPageNumber - 1].classList.add('hidden');
+                currentPdfPageNumber--;
+                pdfCanvases[currentPdfPageNumber - 1].classList.remove('hidden');
+                window.scrollTo(0, 0);
+                updatePdfTitleWithPage();
+            } else {
+                // Vai alla canzone precedente
+                prevPdf();
+            }
+        }
 
         let wakeLock = null;
 
@@ -1345,7 +1388,8 @@
             if (!currentPlaylist[currentPdfIndex]) return;
             const song = currentPlaylist[currentPdfIndex];
             
-            document.getElementById('pdf-modal-title').innerText = song.title;
+            originalPdfTitle = song.title;
+            updatePdfTitleWithPage();
             const loader = document.getElementById('pdf-loader');
             const container = document.getElementById('pdf-container');
             
@@ -1359,6 +1403,10 @@
                 const containerWidth = container.clientWidth;
                 const outputScale = window.devicePixelRatio || 1;
                 
+                pdfCanvases = [];
+                currentPdfPageNumber = 1;
+                totalPdfPages = pdfDoc.numPages;
+                
                 for (let i = 1; i <= pdfDoc.numPages; i++) {
                     const page = await pdfDoc.getPage(i);
                     const unscaledViewport = page.getViewport({scale: 1});
@@ -1366,7 +1414,10 @@
                     const viewport = page.getViewport({scale: scale});
                     
                     const canvas = document.createElement('canvas');
-                    canvas.className = 'w-full shadow-md mb-2 bg-white';
+                    // Rimuoviamo il margin-bottom e aggiungiamo l'ID
+                    canvas.className = 'w-full shadow-md bg-white';
+                    if (i !== 1) canvas.classList.add('hidden'); // Nascondi tutte le pagine tranne la prima
+                    
                     const context = canvas.getContext('2d');
                     
                     canvas.width = Math.floor(viewport.width * outputScale);
@@ -1377,6 +1428,7 @@
                     const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
                     
                     container.appendChild(canvas);
+                    pdfCanvases.push(canvas);
                     
                     await page.render({
                         canvasContext: context,
@@ -1384,6 +1436,7 @@
                         viewport: viewport
                     }).promise;
                 }
+                updatePdfTitleWithPage();
             } catch (err) {
                 console.error("Errore PDF:", err);
                 container.innerHTML += `<div class="text-black p-4 text-center mt-10">File PDF non trovato o errore di lettura.<br><br><span class="text-xs text-red-500">Dettaglio Errore: ${err.message || err}</span><br><br>Hai scaricato i file correttamente?</div>`;
@@ -1499,8 +1552,8 @@
             // Se lo swipe è più verticale che orizzontale, ignoriamo
             if (diffY > diffX) return;
             
-            if (touchendX < touchstartX - 60) nextPdf();
-            if (touchendX > touchstartX + 60) prevPdf();
+            if (touchendX < touchstartX - 60) nextPageOrSong();
+            if (touchendX > touchstartX + 60) prevPageOrSong();
         }
         document.addEventListener('DOMContentLoaded', () => {
             const modal = document.getElementById('pdf-modal');
@@ -1535,10 +1588,10 @@
                 
                 if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
                     e.preventDefault();
-                    nextPdf();
+                    nextPageOrSong();
                 } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
                     e.preventDefault();
-                    prevPdf();
+                    prevPageOrSong();
                 }
             });
         });
