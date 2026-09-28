@@ -1660,6 +1660,10 @@
         fetchCanzoniData();
         
         // Setup initial history state
+        if (localStorage.getItem('gas_url')) {
+            const navScalette = document.getElementById('nav-scalette');
+            if (navScalette) navScalette.classList.remove('hidden');
+        }
         const savedView = sessionStorage.getItem('lodeAppCurrentView') || 'calendario';
         history.replaceState({ view: savedView }, '', '#' + savedView);
         if (savedView && savedView !== 'calendario') {
