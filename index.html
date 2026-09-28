@@ -78,6 +78,10 @@
                 <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
                 Archivio Eventi
             </button>
+            <button onclick="switchView('scalette', true)" id="nav-scalette" class="w-full text-left bg-transparent hover:bg-white/[0.05] text-[#cccccc] p-3 rounded-xl font-bold flex items-center gap-3 transition-colors">
+                <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                Le Tue Scalette
+            </button>
             <button onclick="downloadAllForOffline()" id="nav-offline-sync" class="w-full text-left bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 p-3 rounded-xl font-bold flex items-center gap-3 transition-colors mt-2">
                 <svg id="offline-sync-icon" class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
                 <div class="flex flex-col min-w-0">
@@ -178,6 +182,58 @@
                 <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] h-32"></div>
                 <div class="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] h-32"></div>
             </div>
+        </div>
+    </main>
+
+
+    <main id="view-scalette" class="hidden max-w-md mx-auto p-4 pb-12">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-lg font-black text-white uppercase tracking-widest pl-1 drop-shadow-md">Le Tue Scalette</h2>
+            <button onclick="createNewScaletta()" class="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-2 px-3 rounded-lg text-xs transition-colors flex items-center gap-1 shadow-[0_0_15px_rgba(234,179,8,0.3)]">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Crea
+            </button>
+        </div>
+        
+        <div id="scalette-list-container" class="space-y-3 mb-8">
+            <!-- Qui verranno caricate le scalette salvate -->
+        </div>
+
+        <!-- Editor Scaletta (Nascosto di default) -->
+        <div id="scaletta-editor" class="hidden bg-white/[0.02] p-4 rounded-2xl border border-white/[0.05] shadow-[0_4px_15px_rgba(0,0,0,0.5)]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-white" id="scaletta-editor-title">Nuova Scaletta</h3>
+                <button onclick="closeScalettaEditor()" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            
+            <input type="text" id="scaletta-name" placeholder="Nome della scaletta (es. Culto Domenica)" class="w-full bg-[#222222] border border-[#444444] text-[#ffffff] text-sm rounded-lg p-2.5 mb-4 outline-none focus:border-yellow-500">
+            
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-[#888888] uppercase tracking-wider">Brani in Scaletta</span>
+                <span class="text-[10px] text-[#555555]">Trascina ☰ per riordinare</span>
+            </div>
+            
+            <!-- Contenitore Drag and Drop -->
+            <ul id="scaletta-items" class="space-y-2 mb-6 min-h-[50px] bg-[#111111] p-2 rounded-lg border border-[#333333]">
+                <!-- Brani -->
+            </ul>
+
+            <div class="border-t border-white/[0.05] pt-4 mb-4">
+                <span class="text-xs font-bold text-[#888888] uppercase tracking-wider block mb-2">Aggiungi Brano</span>
+                <div class="relative w-full mb-3">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#666666]">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </span>
+                    <input type="text" id="search-add-scaletta" placeholder="Cerca dal repertorio..." class="w-full bg-[#222222] border border-[#444444] text-[#ffffff] text-sm rounded-lg block pl-9 p-2.5 outline-none focus:border-yellow-500">
+                </div>
+                <div id="add-scaletta-results" class="max-h-40 overflow-y-auto space-y-1">
+                    <!-- Risultati ricerca -->
+                </div>
+            </div>
+
+            <button onclick="saveScaletta()" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg active:scale-95 transition-all">
+                Salva Scaletta
+            </button>
         </div>
     </main>
 
@@ -653,6 +709,7 @@
                         (c['Tonalità'] && c['Tonalità'].toLowerCase().includes(query))
                     );
                     renderCanzoni(filtered);
+                    window.scrollTo(0, 0);
                 });
             }
             
