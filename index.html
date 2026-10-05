@@ -1278,6 +1278,7 @@
                 pdfCanvases[currentPdfPageNumber - 1].classList.remove('hidden');
                 window.scrollTo(0, 0);
                 updatePdfTitleWithPage();
+                updateFloatingButtons();
             } else {
                 // Vai alla canzone successiva
                 nextPdf();
@@ -1292,6 +1293,7 @@
                 pdfCanvases[currentPdfPageNumber - 1].classList.remove('hidden');
                 window.scrollTo(0, 0);
                 updatePdfTitleWithPage();
+                updateFloatingButtons();
             } else {
                 // Vai alla canzone precedente
                 prevPdf();
@@ -1382,7 +1384,7 @@
             const nextBtn = document.getElementById('floating-next');
             if(!prevBtn || !nextBtn || !vv) return;
             
-            if (currentPlaylist.length <= 1) {
+            if (currentPlaylist.length <= 1 && totalPdfPages <= 1) {
                 prevBtn.style.display = 'none';
                 nextBtn.style.display = 'none';
                 return;
@@ -1391,11 +1393,14 @@
             const scale = vv.scale;
             const inverseScale = 1 / scale;
             
-            prevBtn.style.opacity = currentPdfIndex > 0 ? '0.85' : '0';
-            prevBtn.style.pointerEvents = currentPdfIndex > 0 ? 'auto' : 'none';
+            // Logica visibilità: se siamo alla prima pagina del primo brano, prevBtn disabilitato.
+            const hasPrev = (currentPdfIndex > 0) || (currentPdfPageNumber > 1);
+            prevBtn.style.opacity = hasPrev ? '0.85' : '0';
+            prevBtn.style.pointerEvents = hasPrev ? 'auto' : 'none';
             
-            nextBtn.style.opacity = currentPdfIndex < currentPlaylist.length - 1 ? '0.85' : '0';
-            nextBtn.style.pointerEvents = currentPdfIndex < currentPlaylist.length - 1 ? 'auto' : 'none';
+            const hasNext = (currentPdfIndex < currentPlaylist.length - 1) || (currentPdfPageNumber < totalPdfPages);
+            nextBtn.style.opacity = hasNext ? '0.85' : '0';
+            nextBtn.style.pointerEvents = hasNext ? 'auto' : 'none';
 
             prevBtn.style.display = 'flex';
             nextBtn.style.display = 'flex';
@@ -1603,7 +1608,7 @@
         let isPinching = false;
         function handlePdfSwipe() {
             if (isPinching) return;
-            if (currentPlaylist.length <= 1) return;
+            if (currentPlaylist.length <= 1 && totalPdfPages <= 1) return;
             if (window.visualViewport && window.visualViewport.scale > 1.05) return;
             
             const diffX = Math.abs(touchendX - touchstartX);
@@ -1979,10 +1984,10 @@
         <button id="floating-next" onclick="nextPdf()" class="fixed z-[200] bg-[#e53e3e]/90 text-white w-12 h-12 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.5)] border border-[#ff6b6b] flex items-center justify-center backdrop-blur-sm transition-all active:scale-95 hidden" style="transform-origin: center;">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
         </button>
-        <div id="floating-prev" onclick="prevPdf()" class="absolute left-0 top-0 z-[200] w-12 h-12 bg-[#222]/80 border border-white/10 text-white rounded-full items-center justify-center backdrop-blur shadow-[0_0_15px_rgba(0,0,0,0.5)] transition-opacity duration-300 opacity-0 pointer-events-none origin-center" style="display: none;">
+        <div id="floating-prev" onclick="prevPageOrSong()" class="absolute left-0 top-0 z-[200] w-12 h-12 bg-[#222]/80 border border-white/10 text-white rounded-full items-center justify-center backdrop-blur shadow-[0_0_15px_rgba(0,0,0,0.5)] transition-opacity duration-300 opacity-0 pointer-events-none origin-center" style="display: none;">
             <svg class="w-6 h-6 pr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
         </div>
-        <div id="floating-next" onclick="nextPdf()" class="absolute left-0 top-0 z-[200] w-12 h-12 bg-[#e53e3e]/80 border border-red-400/30 text-white rounded-full items-center justify-center backdrop-blur shadow-[0_0_15px_rgba(229,62,62,0.5)] transition-opacity duration-300 opacity-0 pointer-events-none origin-center" style="display: none;">
+        <div id="floating-next" onclick="nextPageOrSong()" class="absolute left-0 top-0 z-[200] w-12 h-12 bg-[#e53e3e]/80 border border-red-400/30 text-white rounded-full items-center justify-center backdrop-blur shadow-[0_0_15px_rgba(229,62,62,0.5)] transition-opacity duration-300 opacity-0 pointer-events-none origin-center" style="display: none;">
             <svg class="w-6 h-6 pl-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
         </div>
     </div>
